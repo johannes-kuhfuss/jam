@@ -1,6 +1,84 @@
 ---
 - name: Install K3s
-  hosts: all
+  hosts: k3s_servers
   become: true
-  tasks: []
+  handlers:
+    - name: Restart k3s
+      ansible.builtin.service:
+        name: k3s
+        state: restarted
 
+  tasks:
+    - name: Ensure K3s config directory exists
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Copy K3s server configuration
+      ansible.builtin.copy:
+        src: "{{ k3s_config_source }}"
+        dest: "{{ k3s_config_path }}"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart k3s
+
+    - name: Download K3s installer
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install latest K3s server
+      ansible.builtin.command: /tmp/k3s-install.sh
+      args:
+        creates: /usr/local/bin/k3s
+      environment:
+        INSTALL_K3S_EXEC: server
+      when: k3s_version | length == 0
+
+    - name: Install pinned K3s server
+      ansible.builtin.command: /tmp/k3s-install.sh
+      args:
+        creates: /usr/local/bin/k3s
+      environment:
+        INSTALL_K3S_EXEC: server
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+      when: k3s_version | length > 0
+
+    - name: Ensure K3s is enabled and running
+      ansible.builtin.service:
+        name: k3s
+        enabled: true
+        state: started
+
+    - name: Wait for kubeconfig
+      ansible.builtin.wait_for:
+        path: "{{ k3s_kubeconfig_path }}"
+        timeout: 120
+
+    - name: Create local generated kubeconfig directory
+      ansible.builtin.file:
+        path: "{{ k3s_local_kubeconfig_dir }}"
+        state: directory
+        mode: "0750"
+      become: false
+      delegate_to: localhost
+
+    - name: Read kubeconfig from node
+      ansible.builtin.slurp:
+        src: "{{ k3s_kubeconfig_path }}"
+      register: k3s_kubeconfig
+
+    - name: Write local kubeconfig with reachable server address
+      ansible.builtin.copy:
+        dest: "{{ k3s_local_kubeconfig_dir }}/{{ inventory_hostname }}.yaml"
+        mode: "0600"
+        content: "{{ k3s_kubeconfig.content | b64decode | regex_replace('https://127.0.0.1:6443', 'https://' + ansible_host + ':6443') }}"
+      become: false
+      delegate_to: localhost

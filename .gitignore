@@ -27,6 +27,27 @@ go.work.sum
 # env file
 .env
 
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# Ansible
+*.retry
+infra/ansible/inventories/*/hosts.yml
+
+# Generated cluster access files
+infra/k3s/generated/
+
 # Editor/IDE
 # .idea/
 # .vscode/

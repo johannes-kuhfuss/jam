@@ -1,2 +1,9 @@
-# K3s server configuration.
+---
+write-kubeconfig-mode: "0644"
+cluster-init: true
 
+# Foundational services such as ingress, load balancing, monitoring, and
+# GitOps will be installed later as explicit Kubernetes add-ons.
+disable:
+  - traefik
+  - servicelb

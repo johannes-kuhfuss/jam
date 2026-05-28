@@ -1,0 +1,6 @@
+---
+k3s_version: ""
+k3s_config_source: "{{ playbook_dir }}/../../k3s/config/server.yaml"
+k3s_config_path: /etc/rancher/k3s/config.yaml
+k3s_kubeconfig_path: /etc/rancher/k3s/k3s.yaml
+k3s_local_kubeconfig_dir: "{{ playbook_dir }}/../../k3s/generated"
