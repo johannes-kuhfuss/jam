@@ -13,7 +13,7 @@ This directory contains the infrastructure and operations configuration for the 
 - `secrets/`: encrypted secret definitions only.
 - `policies/`: network, admission, and pod security policies.
 
-## Single-node K3s lab flow
+## K3s lab flow
 
 The initial lab environment supports either one K3s server node or a three-server K3s cluster running as VMs on Proxmox.
 
@@ -40,6 +40,14 @@ Or run the combined local orchestration script:
 .\scripts\dev\provision-lab.ps1
 ```
 
+On Linux:
+
+```sh
+./scripts/dev/provision-lab.sh
+```
+
 Terraform owns the Proxmox VM. Ansible owns host configuration and K3s installation. Kubernetes add-ons are intentionally left for a later GitOps-driven step.
 
 In three-node mode, the first inventory host initializes the K3s cluster and the remaining two servers join it. Keep the server count odd; the supported configuration options are intentionally limited to `1` and `3`.
+
+See `docs/runbooks/ops-runner.md` for Linux runner setup notes.
