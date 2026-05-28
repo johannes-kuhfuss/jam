@@ -1,0 +1,6 @@
+---
+- name: Bootstrap K3s nodes
+  hosts: all
+  become: true
+  tasks: []
+
