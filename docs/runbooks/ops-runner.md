@@ -87,7 +87,7 @@ dns_servers        = ["192.168.1.1"]
 Run the combined lab provisioning script:
 
 ```sh
-chmod +x scripts/dev/provision-lab.sh infra/k3s/scripts/install.sh infra/k3s/scripts/kubeconfig.sh
+chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh infra/k3s/scripts/install.sh infra/k3s/scripts/kubeconfig.sh
 ./scripts/dev/provision-lab.sh
 ```
 
@@ -101,5 +101,15 @@ kubectl get nodes
 ```
 
 `terraform.tfvars`, generated Ansible inventories, Terraform state, and generated kubeconfigs are local runner state and must not be committed.
+
+## Lab deprovisioning
+
+Destroy the Terraform-managed lab VMs from the Linux runner:
+
+```sh
+./scripts/dev/deprovision-lab.sh
+```
+
+The script runs `terraform destroy`, removes the generated Ansible inventory, and removes generated kubeconfig files. It does not delete the Proxmox VM template.
 
 See `docs/runbooks/proxmox-cloud-init-template.md` for the Proxmox VM template setup.
