@@ -50,4 +50,4 @@ Terraform owns the Proxmox VM. Ansible owns host configuration and K3s installat
 
 In three-node mode, the first inventory host initializes the K3s cluster and the remaining two servers join it. Keep the server count odd; the supported configuration options are intentionally limited to `1` and `3`.
 
-See `docs/runbooks/ops-runner.md` for Linux runner setup notes.
+See `docs/runbooks/proxmox-cloud-init-template.md` for Proxmox template setup and `docs/runbooks/ops-runner.md` for Linux runner setup notes.
