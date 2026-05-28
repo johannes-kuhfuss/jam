@@ -100,6 +100,20 @@ To use the generated kubeconfig in a shell:
 kubectl get nodes
 ```
 
+The generated kubeconfig is stored under:
+
+```text
+infra/k3s/generated/
+```
+
+For the default node name, the file is:
+
+```text
+infra/k3s/generated/jam-k3s-01.yaml
+```
+
+The kubeconfig is fetched from the first K3s server and rewritten to use that node's reachable IP address instead of `127.0.0.1`.
+
 `terraform.tfvars`, generated Ansible inventories, Terraform state, and generated kubeconfigs are local runner state and must not be committed.
 
 ## Lab deprovisioning
