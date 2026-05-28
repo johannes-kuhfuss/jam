@@ -93,12 +93,14 @@ chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh infra/k3s/s
 
 The script runs Terraform, writes `infra/ansible/inventories/lab/hosts.yml`, then runs the Ansible bootstrap and K3s install playbooks.
 
-To use the generated kubeconfig in a shell:
+To install the generated kubeconfig as the default kubeconfig:
 
 ```sh
-. ./infra/k3s/scripts/kubeconfig.sh
+./infra/k3s/scripts/kubeconfig.sh
 kubectl get nodes
 ```
+
+The script copies the generated kubeconfig to `~/.kube/config`, sets permissions to `0600`, and backs up an existing default kubeconfig before replacing it.
 
 The generated kubeconfig is stored under:
 

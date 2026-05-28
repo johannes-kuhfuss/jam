@@ -55,9 +55,11 @@ To destroy the Terraform-managed lab VMs from Linux:
 After provisioning, the generated kubeconfig is stored in `infra/k3s/generated/`.
 
 ```sh
-. ./infra/k3s/scripts/kubeconfig.sh
+./infra/k3s/scripts/kubeconfig.sh
 kubectl get nodes
 ```
+
+The script installs the generated kubeconfig into `~/.kube/config` and backs up an existing default kubeconfig first.
 
 Terraform owns the Proxmox VM. Ansible owns host configuration and K3s installation. Kubernetes add-ons are intentionally left for a later GitOps-driven step.
 
