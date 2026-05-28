@@ -1,6 +1,6 @@
 ---
-- name: Install K3s
-  hosts: k3s_servers
+- name: Install primary K3s server
+  hosts: k3s_servers[0]
   become: true
   handlers:
     - name: Restart k3s
@@ -34,29 +34,117 @@
         group: root
         mode: "0755"
 
-    - name: Install latest K3s server
+    - name: Install latest primary K3s server
       ansible.builtin.command: /tmp/k3s-install.sh
       args:
         creates: /usr/local/bin/k3s
       environment:
-        INSTALL_K3S_EXEC: server
+        INSTALL_K3S_EXEC: server --cluster-init
       when: k3s_version | length == 0
 
-    - name: Install pinned K3s server
+    - name: Install pinned primary K3s server
       ansible.builtin.command: /tmp/k3s-install.sh
       args:
         creates: /usr/local/bin/k3s
       environment:
-        INSTALL_K3S_EXEC: server
+        INSTALL_K3S_EXEC: server --cluster-init
         INSTALL_K3S_VERSION: "{{ k3s_version }}"
       when: k3s_version | length > 0
 
-    - name: Ensure K3s is enabled and running
+    - name: Ensure primary K3s server is enabled and running
       ansible.builtin.service:
         name: k3s
         enabled: true
         state: started
 
+    - name: Wait for primary Kubernetes API
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 6443
+        timeout: 180
+      delegate_to: localhost
+      become: false
+
+    - name: Wait for primary node token
+      ansible.builtin.wait_for:
+        path: /var/lib/rancher/k3s/server/node-token
+        timeout: 120
+
+    - name: Read primary node token
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: primary_k3s_node_token
+
+    - name: Store primary node token for joining servers
+      ansible.builtin.set_fact:
+        k3s_node_token: "{{ primary_k3s_node_token.content | b64decode | trim }}"
+
+- name: Join additional K3s servers
+  hosts: k3s_servers
+  become: true
+  handlers:
+    - name: Restart k3s
+      ansible.builtin.service:
+        name: k3s
+        state: restarted
+
+  tasks:
+    - name: Skip primary server
+      ansible.builtin.meta: end_host
+      when: inventory_hostname == groups['k3s_servers'][0]
+
+    - name: Ensure K3s config directory exists
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Copy K3s server configuration
+      ansible.builtin.copy:
+        src: "{{ k3s_config_source }}"
+        dest: "{{ k3s_config_path }}"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart k3s
+
+    - name: Download K3s installer
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install latest joining K3s server
+      ansible.builtin.command: /tmp/k3s-install.sh
+      args:
+        creates: /usr/local/bin/k3s
+      environment:
+        INSTALL_K3S_EXEC: "server --server https://{{ hostvars[groups['k3s_servers'][0]].ansible_host }}:6443 --token {{ hostvars[groups['k3s_servers'][0]].k3s_node_token }}"
+      when: k3s_version | length == 0
+
+    - name: Install pinned joining K3s server
+      ansible.builtin.command: /tmp/k3s-install.sh
+      args:
+        creates: /usr/local/bin/k3s
+      environment:
+        INSTALL_K3S_EXEC: "server --server https://{{ hostvars[groups['k3s_servers'][0]].ansible_host }}:6443 --token {{ hostvars[groups['k3s_servers'][0]].k3s_node_token }}"
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+      when: k3s_version | length > 0
+
+    - name: Ensure joining K3s server is enabled and running
+      ansible.builtin.service:
+        name: k3s
+        enabled: true
+        state: started
+
+- name: Fetch kubeconfig from primary K3s server
+  hosts: k3s_servers[0]
+  become: true
+  tasks:
     - name: Wait for kubeconfig
       ansible.builtin.wait_for:
         path: "{{ k3s_kubeconfig_path }}"
@@ -70,7 +158,7 @@
       become: false
       delegate_to: localhost
 
-    - name: Read kubeconfig from node
+    - name: Read kubeconfig from primary node
       ansible.builtin.slurp:
         src: "{{ k3s_kubeconfig_path }}"
       register: k3s_kubeconfig

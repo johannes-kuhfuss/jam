@@ -14,8 +14,7 @@ try {
     terraform init
     terraform apply
 
-    $NodeName = terraform output -raw k3s_node_name
-    $NodeIp = terraform output -raw k3s_node_ipv4_address
+    $Nodes = terraform output -json k3s_nodes | ConvertFrom-Json
     $SshUser = terraform output -raw ssh_user
 }
 finally {
@@ -27,15 +26,21 @@ if (-not (Test-Path $InventoryPath)) {
     Copy-Item $ExampleInventory $InventoryPath
 }
 
+$InventoryLines = foreach ($Node in $Nodes) {
+    @"
+        $($Node.name):
+          ansible_host: $($Node.ipv4_address)
+          ansible_user: ${SshUser}
+"@
+}
+
 $Inventory = @"
 ---
 all:
   children:
     k3s_servers:
       hosts:
-        ${NodeName}:
-          ansible_host: ${NodeIp}
-          ansible_user: ${SshUser}
+$($InventoryLines -join "`n")
 "@
 
 Set-Content -Path $InventoryPath -Value $Inventory

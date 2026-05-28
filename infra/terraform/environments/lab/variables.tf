@@ -58,15 +58,26 @@ variable "ssh_public_key_path" {
   description = "Path to the SSH public key injected by cloud-init."
 }
 
-variable "k3s_node_name" {
-  type        = string
-  description = "K3s node VM name."
-  default     = "jam-k3s-01"
+variable "k3s_node_count" {
+  type        = number
+  description = "Number of K3s server nodes to create. Supported values are 1 and 3."
+  default     = 1
+
+  validation {
+    condition     = contains([1, 3], var.k3s_node_count)
+    error_message = "k3s_node_count must be either 1 or 3."
+  }
 }
 
-variable "k3s_node_vm_id" {
+variable "k3s_node_name_prefix" {
+  type        = string
+  description = "Prefix used for K3s node VM names."
+  default     = "jam-k3s"
+}
+
+variable "k3s_node_vm_id_start" {
   type        = number
-  description = "Proxmox VM ID for the K3s node."
+  description = "Starting Proxmox VM ID for K3s nodes. Additional nodes increment from this value."
 }
 
 variable "k3s_node_cpu_cores" {
@@ -87,9 +98,14 @@ variable "k3s_node_disk_size_gb" {
   default     = 80
 }
 
-variable "k3s_node_ipv4_address" {
-  type        = string
-  description = "Static IPv4 address assigned to the K3s node."
+variable "k3s_node_ipv4_addresses" {
+  type        = list(string)
+  description = "Static IPv4 addresses assigned to K3s nodes. Provide one address for single-node mode or three for HA mode."
+
+  validation {
+    condition     = contains([1, 3], length(var.k3s_node_ipv4_addresses))
+    error_message = "k3s_node_ipv4_addresses must contain either one or three addresses."
+  }
 }
 
 variable "ipv4_prefix_length" {

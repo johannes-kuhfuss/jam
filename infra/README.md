@@ -15,13 +15,14 @@ This directory contains the infrastructure and operations configuration for the 
 
 ## Single-node K3s lab flow
 
-The initial lab environment is designed for one K3s node running as a VM on Proxmox.
+The initial lab environment supports either one K3s server node or a three-server K3s cluster running as VMs on Proxmox.
 
 1. Create a Debian or Ubuntu cloud-init VM template in Proxmox.
 2. Copy `terraform/environments/lab/terraform.tfvars.example` to `terraform.tfvars` and fill in the local values.
-3. Run Terraform from `terraform/environments/lab`.
-4. Copy `ansible/inventories/lab/hosts.yml.example` to `hosts.yml` and set the VM IP from Terraform output.
-5. Run the Ansible bootstrap and K3s install playbooks.
+3. Set `k3s_node_count` to `1` or `3` and provide the matching number of static IP addresses.
+4. Run Terraform from `terraform/environments/lab`.
+5. Copy `ansible/inventories/lab/hosts.yml.example` to `hosts.yml` and set the VM IPs from Terraform output.
+6. Run the Ansible bootstrap and K3s install playbooks.
 
 ```powershell
 cd infra/terraform/environments/lab
@@ -40,3 +41,5 @@ Or run the combined local orchestration script:
 ```
 
 Terraform owns the Proxmox VM. Ansible owns host configuration and K3s installation. Kubernetes add-ons are intentionally left for a later GitOps-driven step.
+
+In three-node mode, the first inventory host initializes the K3s cluster and the remaining two servers join it. Keep the server count odd; the supported configuration options are intentionally limited to `1` and `3`.

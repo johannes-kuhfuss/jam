@@ -1,16 +1,27 @@
 output "k3s_node_name" {
-  value       = module.k3s_node.name
-  description = "K3s node VM name."
+  value       = values(module.k3s_nodes)[0].name
+  description = "First K3s node VM name."
 }
 
 output "k3s_node_vm_id" {
-  value       = module.k3s_node.vm_id
-  description = "K3s node Proxmox VM ID."
+  value       = values(module.k3s_nodes)[0].vm_id
+  description = "First K3s node Proxmox VM ID."
 }
 
 output "k3s_node_ipv4_address" {
-  value       = module.k3s_node.ipv4_address
-  description = "K3s node IPv4 address."
+  value       = values(module.k3s_nodes)[0].ipv4_address
+  description = "First K3s node IPv4 address."
+}
+
+output "k3s_nodes" {
+  value = [
+    for name, node in module.k3s_nodes : {
+      name         = node.name
+      vm_id        = node.vm_id
+      ipv4_address = node.ipv4_address
+    }
+  ]
+  description = "K3s nodes created for the lab cluster."
 }
 
 output "ssh_user" {
@@ -19,6 +30,9 @@ output "ssh_user" {
 }
 
 output "ansible_inventory_hint" {
-  value       = "${var.k3s_node_name} ansible_host=${module.k3s_node.ipv4_address} ansible_user=${var.cloud_init_username}"
-  description = "Inventory line to copy into the lab Ansible inventory."
+  value = [
+    for node in values(module.k3s_nodes) :
+    "${node.name} ansible_host=${node.ipv4_address} ansible_user=${var.cloud_init_username}"
+  ]
+  description = "Inventory lines to copy into the lab Ansible inventory."
 }

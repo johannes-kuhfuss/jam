@@ -1,11 +1,16 @@
 $ErrorActionPreference = "Stop"
 
-$GeneratedDir = Resolve-Path "$PSScriptRoot\..\generated"
-$Kubeconfig = Join-Path $GeneratedDir "jam-k3s-01.yaml"
-
-if (-not (Test-Path $Kubeconfig)) {
-    throw "Kubeconfig not found at $Kubeconfig. Run install.ps1 first."
+$GeneratedDirPath = "$PSScriptRoot\..\generated"
+if (-not (Test-Path $GeneratedDirPath)) {
+    throw "Generated kubeconfig directory not found at $GeneratedDirPath. Run install.ps1 first."
 }
 
-$env:KUBECONFIG = $Kubeconfig
-Write-Host "KUBECONFIG=$Kubeconfig"
+$GeneratedDir = Resolve-Path $GeneratedDirPath
+$Kubeconfig = Get-ChildItem -Path $GeneratedDir -Filter "*.yaml" | Sort-Object Name | Select-Object -First 1
+
+if ($null -eq $Kubeconfig) {
+    throw "No kubeconfig files found in $GeneratedDir. Run install.ps1 first."
+}
+
+$env:KUBECONFIG = $Kubeconfig.FullName
+Write-Host "KUBECONFIG=$($Kubeconfig.FullName)"
