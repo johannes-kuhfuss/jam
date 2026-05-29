@@ -4,7 +4,21 @@ locals {
     format("%s-%02d", var.k3s_node_name_prefix, index + 1) => {
       index        = index
       vm_id        = var.k3s_node_vm_id_start + index
-      ipv4_address = var.k3s_node_ipv4_addresses[index]
+      ipv4_address = try(var.k3s_node_ipv4_addresses[index], null)
+    }
+  }
+}
+
+resource "terraform_data" "k3s_node_ipv4_address_count_validation" {
+  input = {
+    k3s_node_count          = var.k3s_node_count
+    k3s_node_ipv4_addresses = var.k3s_node_ipv4_addresses
+  }
+
+  lifecycle {
+    precondition {
+      condition     = length(var.k3s_node_ipv4_addresses) == var.k3s_node_count
+      error_message = "k3s_node_ipv4_addresses must contain exactly k3s_node_count addresses."
     }
   }
 }
@@ -12,6 +26,8 @@ locals {
 module "k3s_nodes" {
   source   = "../../modules/servers/proxmox-vm"
   for_each = local.k3s_nodes
+
+  depends_on = [terraform_data.k3s_node_ipv4_address_count_validation]
 
   name                    = each.key
   description             = "jam lab K3s server."
