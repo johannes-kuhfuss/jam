@@ -7,6 +7,15 @@ TERRAFORM_DIR="$REPO_ROOT/infra/terraform/environments/lab"
 ANSIBLE_DIR="$REPO_ROOT/infra/ansible"
 INVENTORY_PATH="$ANSIBLE_DIR/inventories/lab/hosts.yml"
 
+remove_known_host_entries() {
+  command -v ssh-keygen >/dev/null 2>&1 || return 0
+
+  while IFS= read -r host; do
+    [ -n "$host" ] || continue
+    ssh-keygen -R "$host" >/dev/null 2>&1 || true
+  done
+}
+
 if [ ! -f "$TERRAFORM_DIR/terraform.tfvars" ]; then
   echo "Missing $TERRAFORM_DIR/terraform.tfvars. Copy terraform.tfvars.example and fill in your Proxmox values." >&2
   exit 1
@@ -33,6 +42,8 @@ terraform apply
 
 NODES_JSON=$(terraform output -json k3s_nodes)
 SSH_USER=$(terraform output -raw ssh_user)
+
+printf '%s\n' "$NODES_JSON" | jq -r '.[].ipv4_address' | remove_known_host_entries
 
 {
   printf '%s\n' '---'
