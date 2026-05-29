@@ -75,6 +75,19 @@ k3s_node_ipv4_addresses = [
 ]
 ```
 
+For three-node clusters, configure a stable Kubernetes API endpoint before running the K3s install playbook. Use a VIP, load balancer, or DNS name that resolves to the API front end:
+
+```yaml
+# infra/ansible/inventories/lab/group_vars/k3s_servers.yml
+k3s_api_endpoint: "k3s-api.home.arpa"
+k3s_tls_sans:
+  - "192.168.1.60"
+```
+
+The default endpoint is the first K3s server IP, which is acceptable for a single-node lab but leaves API access tied to that node.
+
+K3s installs use the pinned `k3s_version` in `infra/ansible/inventories/lab/group_vars/k3s_servers.yml`. Update that value deliberately when following the cluster upgrade runbook.
+
 Adjust the gateway and DNS values for the local network:
 
 ```hcl
@@ -114,7 +127,7 @@ For the default node name, the file is:
 infra/k3s/generated/jam-k3s-01.yaml
 ```
 
-The kubeconfig is fetched from the first K3s server and rewritten to use that node's reachable IP address instead of `127.0.0.1`.
+The kubeconfig is fetched from the first K3s server and rewritten to use `k3s_api_endpoint` instead of `127.0.0.1`.
 
 `terraform.tfvars`, generated Ansible inventories, Terraform state, and generated kubeconfigs are local runner state and must not be committed.
 

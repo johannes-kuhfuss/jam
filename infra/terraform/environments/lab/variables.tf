@@ -103,8 +103,8 @@ variable "k3s_node_ipv4_addresses" {
   description = "Static IPv4 addresses assigned to K3s nodes. Provide one address for single-node mode or three for HA mode."
 
   validation {
-    condition     = contains([1, 3], length(var.k3s_node_ipv4_addresses))
-    error_message = "k3s_node_ipv4_addresses must contain either one or three addresses."
+    condition     = length(var.k3s_node_ipv4_addresses) == var.k3s_node_count
+    error_message = "k3s_node_ipv4_addresses must contain exactly k3s_node_count addresses."
   }
 }
 

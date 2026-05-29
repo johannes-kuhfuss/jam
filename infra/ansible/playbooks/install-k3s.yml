@@ -26,6 +26,18 @@
         mode: "0644"
       notify: Restart k3s
 
+    - name: Configure K3s API certificate SANs
+      ansible.builtin.blockinfile:
+        path: "{{ k3s_config_path }}"
+        marker: "# {mark} ANSIBLE MANAGED K3S TLS SANS"
+        block: |
+          tls-san:
+          {% for san in ([k3s_api_endpoint] + k3s_tls_sans) | unique %}
+            - "{{ san }}"
+          {% endfor %}
+      when: k3s_api_endpoint | length > 0
+      notify: Restart k3s
+
     - name: Download K3s installer
       ansible.builtin.get_url:
         url: https://get.k3s.io
@@ -110,6 +122,26 @@
         mode: "0644"
       notify: Restart k3s
 
+    - name: Configure K3s API certificate SANs
+      ansible.builtin.blockinfile:
+        path: "{{ k3s_config_path }}"
+        marker: "# {mark} ANSIBLE MANAGED K3S TLS SANS"
+        block: |
+          tls-san:
+          {% for san in ([k3s_api_endpoint] + k3s_tls_sans) | unique %}
+            - "{{ san }}"
+          {% endfor %}
+      when: k3s_api_endpoint | length > 0
+      notify: Restart k3s
+
+    - name: Configure K3s join endpoint
+      ansible.builtin.blockinfile:
+        path: "{{ k3s_config_path }}"
+        marker: "# {mark} ANSIBLE MANAGED K3S JOIN ENDPOINT"
+        block: |
+          server: "https://{{ k3s_api_endpoint }}:6443"
+      notify: Restart k3s
+
     - name: Download K3s installer
       ansible.builtin.get_url:
         url: https://get.k3s.io
@@ -123,7 +155,7 @@
       args:
         creates: /usr/local/bin/k3s
       environment:
-        INSTALL_K3S_EXEC: "server --server https://{{ hostvars[groups['k3s_servers'][0]].ansible_host }}:6443 --token {{ hostvars[groups['k3s_servers'][0]].k3s_node_token }}"
+        INSTALL_K3S_EXEC: "server --server https://{{ k3s_api_endpoint }}:6443 --token {{ hostvars[groups['k3s_servers'][0]].k3s_node_token }}"
       when: k3s_version | length == 0
 
     - name: Install pinned joining K3s server
@@ -131,7 +163,7 @@
       args:
         creates: /usr/local/bin/k3s
       environment:
-        INSTALL_K3S_EXEC: "server --server https://{{ hostvars[groups['k3s_servers'][0]].ansible_host }}:6443 --token {{ hostvars[groups['k3s_servers'][0]].k3s_node_token }}"
+        INSTALL_K3S_EXEC: "server --server https://{{ k3s_api_endpoint }}:6443 --token {{ hostvars[groups['k3s_servers'][0]].k3s_node_token }}"
         INSTALL_K3S_VERSION: "{{ k3s_version }}"
       when: k3s_version | length > 0
 
@@ -167,6 +199,6 @@
       ansible.builtin.copy:
         dest: "{{ k3s_local_kubeconfig_dir }}/{{ inventory_hostname }}.yaml"
         mode: "0600"
-        content: "{{ k3s_kubeconfig.content | b64decode | regex_replace('https://127.0.0.1:6443', 'https://' + ansible_host + ':6443') }}"
+        content: "{{ k3s_kubeconfig.content | b64decode | regex_replace('https://127.0.0.1:6443', 'https://' + k3s_api_endpoint + ':6443') }}"
       become: false
       delegate_to: localhost
