@@ -5,6 +5,8 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 GENERATED_DIR="$SCRIPT_DIR/../generated"
 KUBE_DIR="$HOME/.kube"
 TARGET_KUBECONFIG="$KUBE_DIR/config"
+MANAGED_MARKER="$KUBE_DIR/config.jam-managed"
+BACKUP_PATH=""
 
 if [ ! -d "$GENERATED_DIR" ]; then
   echo "Generated kubeconfig directory not found at $GENERATED_DIR. Run install.sh first." >&2
@@ -28,6 +30,7 @@ fi
 
 cp "$KUBECONFIG_FILE" "$TARGET_KUBECONFIG"
 chmod 600 "$TARGET_KUBECONFIG"
+printf '%s\n' "$BACKUP_PATH" > "$MANAGED_MARKER"
 
 printf 'Installed kubeconfig from %s to %s\n' "$KUBECONFIG_FILE" "$TARGET_KUBECONFIG"
 printf '%s\n' 'kubectl can now use the default kubeconfig path.'

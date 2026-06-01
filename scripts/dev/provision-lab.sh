@@ -6,6 +6,7 @@ REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 TERRAFORM_DIR="$REPO_ROOT/infra/terraform/environments/lab"
 ANSIBLE_DIR="$REPO_ROOT/infra/ansible"
 INVENTORY_PATH="$ANSIBLE_DIR/inventories/lab/hosts.yml"
+KUBECONFIG_SCRIPT="$REPO_ROOT/infra/k3s/scripts/kubeconfig.sh"
 
 remove_known_host_entries() {
   command -v ssh-keygen >/dev/null 2>&1 || return 0
@@ -57,3 +58,5 @@ printf '%s\n' "$NODES_JSON" | jq -r '.[].ipv4_address' | remove_known_host_entri
 cd "$ANSIBLE_DIR"
 ansible-playbook -i inventories/lab/hosts.yml playbooks/bootstrap-nodes.yml
 ansible-playbook -i inventories/lab/hosts.yml playbooks/install-k3s.yml
+
+"$KUBECONFIG_SCRIPT"

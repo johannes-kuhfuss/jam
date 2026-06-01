@@ -104,9 +104,9 @@ chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh infra/k3s/s
 ./scripts/dev/provision-lab.sh
 ```
 
-The script runs Terraform, writes `infra/ansible/inventories/lab/hosts.yml`, then runs the Ansible bootstrap and K3s install playbooks.
+The script runs Terraform, writes `infra/ansible/inventories/lab/hosts.yml`, runs the Ansible bootstrap and K3s install playbooks, then installs the generated kubeconfig as the default kubeconfig.
 
-To install the generated kubeconfig as the default kubeconfig:
+To refresh the generated kubeconfig manually:
 
 ```sh
 ./infra/k3s/scripts/kubeconfig.sh
@@ -139,6 +139,6 @@ Destroy the Terraform-managed lab VMs from the Linux runner:
 ./scripts/dev/deprovision-lab.sh
 ```
 
-The script runs `terraform destroy`, removes the generated Ansible inventory, and removes generated kubeconfig files. It does not delete the Proxmox VM template.
+The script runs `terraform destroy`, removes stale SSH host keys, restores or removes the lab-installed default kubeconfig, removes the generated Ansible inventory, and removes generated kubeconfig files. It does not delete the Proxmox VM template.
 
 See `docs/runbooks/proxmox-cloud-init-template.md` for the Proxmox VM template setup.
