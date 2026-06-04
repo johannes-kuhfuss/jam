@@ -36,7 +36,7 @@ Generated client configs are stored in:
 infra/talos/generated/
 ```
 
-The provisioning script also installs the generated kubeconfig to `~/.kube/config` and the generated talosconfig to the default `talosctl` config path, backing up existing default configs first. The installed kubeconfig uses the first Talos node IP until kube-vip advertises the API VIP. After provisioning, `kubectl` and `talosctl` can use the lab cluster without extra config flags.
+The provisioning script also installs the generated kubeconfig to `~/.kube/config` and the generated talosconfig to the default `talosctl` config path, backing up existing default configs first. The installed kubeconfig uses the first Talos node IP during bootstrap; after Cilium and kube-vip are healthy, the Cilium bootstrap script switches it back to the API VIP. After provisioning, `kubectl` and `talosctl` can use the lab cluster without extra config flags.
 
 OpenTofu owns the Proxmox VMs and Talos bootstrap. The Cilium bootstrap script performs the first CNI install because the cluster starts without a CNI and with kube-proxy disabled. GitOps should own Cilium configuration and upgrades after that initial bootstrap.
 

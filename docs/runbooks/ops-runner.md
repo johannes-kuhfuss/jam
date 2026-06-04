@@ -109,7 +109,7 @@ It also installs the generated kubeconfig to the default kubeconfig path:
 ~/.kube/config
 ```
 
-The installed kubeconfig uses the first Talos node IP as the Kubernetes API server. This keeps `kubectl`, Helm, and the Cilium bootstrap working before kube-vip starts advertising `api_virtual_ip`.
+The installed kubeconfig initially uses the first Talos node IP as the Kubernetes API server. This keeps `kubectl`, Helm, and the Cilium bootstrap working before kube-vip starts advertising `api_virtual_ip`. After Cilium and kube-vip are healthy, `scripts/dev/bootstrap-cilium.sh` switches the generated and default kubeconfig back to the API VIP.
 
 If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
 
