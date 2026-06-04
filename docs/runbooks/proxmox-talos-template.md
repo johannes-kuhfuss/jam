@@ -39,8 +39,8 @@ xz -d "talos-${TALOS_VERSION}-${SCHEMATIC_ID}-nocloud-amd64.raw.xz"
 
 qm create "$TEMPLATE_ID" \
   --name "$TEMPLATE_NAME" \
-  --memory 2048 \
-  --cores 2 \
+  --memory 8192 \
+  --cores 4 \
   --net0 virtio,bridge="$BRIDGE" \
   --scsihw virtio-scsi-pci \
   --ostype l26 \
