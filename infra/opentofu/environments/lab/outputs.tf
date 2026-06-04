@@ -22,7 +22,7 @@ output "talosconfig" {
 }
 
 output "kubeconfig" {
-  value       = data.talos_cluster_kubeconfig.this.kubeconfig_raw
+  value       = talos_cluster_kubeconfig.this.kubeconfig_raw
   description = "Generated Kubernetes kubeconfig. Store securely."
   sensitive   = true
 }

@@ -254,7 +254,7 @@ data "talos_client_configuration" "this" {
   endpoints            = var.talos_node_ipv4_addresses
 }
 
-data "talos_cluster_kubeconfig" "this" {
+resource "talos_cluster_kubeconfig" "this" {
   depends_on = [talos_machine_bootstrap.this]
 
   client_configuration = talos_machine_secrets.this.client_configuration
