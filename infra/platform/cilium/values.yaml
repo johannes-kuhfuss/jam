@@ -31,15 +31,11 @@ ipam:
 
 operator:
   replicas: 1
-  tolerations:
-    - operator: Exists
 
 hubble:
   enabled: true
   relay:
     enabled: true
-    tolerations:
-      - operator: Exists
   ui:
     enabled: false
 
