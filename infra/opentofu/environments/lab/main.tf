@@ -26,6 +26,11 @@ locals {
       }
     }
     machine = {
+      nodeLabels = {
+        "node.kubernetes.io/exclude-from-external-load-balancers" = {
+          "$patch" = "delete"
+        }
+      }
       install = {
         disk = var.talos_install_disk
       }
