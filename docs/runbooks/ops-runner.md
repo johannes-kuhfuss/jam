@@ -1,92 +1,84 @@
 # Ops Runner
 
-Use a small Linux machine as the operational runner for Terraform, Ansible, and Kubernetes administration.
+Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium bootstrap, and Kubernetes administration.
 
-## Required tools
+## Required Tools
 
-- `terraform`
-- `ansible`
-- `python3`
-- `ssh`
-- `jq`
+- `tofu`
+- `talosctl`
 - `kubectl`
+- `helm`
 
 Recommended tools for later cluster add-ons:
 
-- `helm`
 - `flux`
 - `yq`
 
-## Network access
+## Network Access
 
 The runner needs access to:
 
 - the Proxmox API, usually `https://<proxmox-host>:8006`
-- the VM network over SSH
-- the K3s API on TCP port `6443`
-- the internet for downloading the K3s installer during Ansible runs
+- the Talos node maintenance API on TCP port `50000`
+- the Kubernetes API on TCP port `6443`
+- the internet for provider, Talos, Helm chart, and container image downloads
 
-## Lab provisioning
+## Lab Provisioning
 
-Clone the repository onto the Linux runner, then create the local Terraform variable file:
+Clone the repository onto the runner, then create the local OpenTofu variable file:
 
 ```sh
-cp infra/terraform/environments/lab/terraform.tfvars.example infra/terraform/environments/lab/terraform.tfvars
+cp infra/opentofu/environments/lab/lab.auto.tfvars.example infra/opentofu/environments/lab/lab.auto.tfvars
 ```
 
-Edit `terraform.tfvars` with the local Proxmox endpoint, API token, template VM ID, datastore, SSH key, and IP addresses.
+Edit `lab.auto.tfvars` with the local Proxmox endpoint, API token, Talos template VM ID, datastore, IP addresses, and optional static MAC addresses.
 
 Important values:
 
 ```hcl
 proxmox_endpoint  = "https://pve.example.lan:8006/api2/json"
-proxmox_api_token = "terraform@pve!jam=<token-value>"
+proxmox_api_token = "opentofu@pve!jam=<token-value>"
 proxmox_insecure  = true
 
-proxmox_node_name       = "pve"
-template_vm_id          = 9000
-datastore_id            = "local-lvm"
-cloud_init_datastore_id = "local-lvm"
+proxmox_node_name = "pve"
+template_vm_id    = 9000
+datastore_id      = "local-lvm"
 
 network_bridge = "vmbr0"
 vlan_id        = null
-
-cloud_init_username = "jam"
-ssh_public_key_path = "~/.ssh/id_ed25519.pub"
 ```
 
-For one K3s server:
+For one Talos node:
 
 ```hcl
-k3s_node_count = 1
-k3s_node_ipv4_addresses = [
+talos_node_count = 1
+talos_node_ipv4_addresses = [
   "192.168.1.50",
 ]
+talos_node_mac_addresses = [
+  "02:00:00:00:50:01",
+]
+api_virtual_ip = "192.168.1.60"
 ```
 
-For three K3s servers:
+For three Talos nodes:
 
 ```hcl
-k3s_node_count = 3
-k3s_node_ipv4_addresses = [
+talos_node_count = 3
+talos_node_ipv4_addresses = [
   "192.168.1.50",
   "192.168.1.51",
   "192.168.1.52",
 ]
+talos_node_mac_addresses = [
+  "02:00:00:00:50:01",
+  "02:00:00:00:50:02",
+  "02:00:00:00:50:03",
+]
+api_virtual_ip = "192.168.1.60"
 ```
 
-For three-node clusters, configure a stable Kubernetes API endpoint before running the K3s install playbook. Use a VIP, load balancer, or DNS name that resolves to the API front end:
-
-```yaml
-# infra/ansible/inventories/lab/group_vars/k3s_servers.yml
-k3s_api_endpoint: "k3s-api.home.arpa"
-k3s_tls_sans:
-  - "192.168.1.60"
-```
-
-The default endpoint is the first K3s server IP, which is acceptable for a single-node lab but leaves API access tied to that node.
-
-K3s installs use the pinned `k3s_version` in `infra/ansible/inventories/lab/group_vars/k3s_servers.yml`. Update that value deliberately when following the cluster upgrade runbook.
+Reserve the MAC/IP pairs in DHCP so OpenTofu can reach Talos before the final static machine config is applied.
 
 Adjust the gateway and DNS values for the local network:
 
@@ -100,45 +92,32 @@ dns_servers        = ["192.168.1.1"]
 Run the combined lab provisioning script:
 
 ```sh
-chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh infra/k3s/scripts/install.sh infra/k3s/scripts/kubeconfig.sh
+chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh scripts/dev/bootstrap-cilium.sh
 ./scripts/dev/provision-lab.sh
+./scripts/dev/bootstrap-cilium.sh
 ```
 
-The script runs Terraform, writes `infra/ansible/inventories/lab/hosts.yml`, runs the Ansible bootstrap and K3s install playbooks, then installs the generated kubeconfig as the default kubeconfig.
+The script runs OpenTofu and stores generated client configs under:
 
-To refresh the generated kubeconfig manually:
+```text
+infra/talos/generated/
+```
+
+Use the generated kubeconfig:
 
 ```sh
-./infra/k3s/scripts/kubeconfig.sh
+export KUBECONFIG="$PWD/infra/talos/generated/kubeconfig"
 kubectl get nodes
 ```
 
-The script copies the generated kubeconfig to `~/.kube/config`, sets permissions to `0600`, and backs up an existing default kubeconfig before replacing it.
+## Lab Deprovisioning
 
-The generated kubeconfig is stored under:
-
-```text
-infra/k3s/generated/
-```
-
-For the default node name, the file is:
-
-```text
-infra/k3s/generated/jam-k3s-01.yaml
-```
-
-The kubeconfig is fetched from the first K3s server and rewritten to use `k3s_api_endpoint` instead of `127.0.0.1`.
-
-`terraform.tfvars`, generated Ansible inventories, Terraform state, and generated kubeconfigs are local runner state and must not be committed.
-
-## Lab deprovisioning
-
-Destroy the Terraform-managed lab VMs from the Linux runner:
+Destroy the OpenTofu-managed lab VMs from the runner:
 
 ```sh
 ./scripts/dev/deprovision-lab.sh
 ```
 
-The script runs `terraform destroy`, removes stale SSH host keys, restores or removes the lab-installed default kubeconfig, removes the generated Ansible inventory, and removes generated kubeconfig files. It does not delete the Proxmox VM template.
+The script runs `tofu destroy` and removes generated Talos/Kubernetes client configs. It does not delete the Proxmox VM template.
 
-See `docs/runbooks/proxmox-cloud-init-template.md` for the Proxmox VM template setup.
+See `docs/runbooks/proxmox-talos-template.md` for the Proxmox VM template setup.

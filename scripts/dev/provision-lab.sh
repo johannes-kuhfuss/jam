@@ -3,60 +3,29 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
-TERRAFORM_DIR="$REPO_ROOT/infra/terraform/environments/lab"
-ANSIBLE_DIR="$REPO_ROOT/infra/ansible"
-INVENTORY_PATH="$ANSIBLE_DIR/inventories/lab/hosts.yml"
-KUBECONFIG_SCRIPT="$REPO_ROOT/infra/k3s/scripts/kubeconfig.sh"
+OPENTOFU_DIR="$REPO_ROOT/infra/opentofu/environments/lab"
+GENERATED_DIR="$REPO_ROOT/infra/talos/generated"
 
-remove_known_host_entries() {
-  command -v ssh-keygen >/dev/null 2>&1 || return 0
-
-  while IFS= read -r host; do
-    [ -n "$host" ] || continue
-    ssh-keygen -R "$host" >/dev/null 2>&1 || true
-  done
-}
-
-if [ ! -f "$TERRAFORM_DIR/terraform.tfvars" ]; then
-  echo "Missing $TERRAFORM_DIR/terraform.tfvars. Copy terraform.tfvars.example and fill in your Proxmox values." >&2
+if [ ! -f "$OPENTOFU_DIR/lab.auto.tfvars" ]; then
+  echo "Missing $OPENTOFU_DIR/lab.auto.tfvars. Copy lab.auto.tfvars.example and fill in your Proxmox/Talos values." >&2
   exit 1
 fi
 
-command -v terraform >/dev/null 2>&1 || {
-  echo "terraform is required but was not found in PATH." >&2
+command -v tofu >/dev/null 2>&1 || {
+  echo "tofu is required but was not found in PATH." >&2
   exit 1
 }
 
-command -v ansible-playbook >/dev/null 2>&1 || {
-  echo "ansible-playbook is required but was not found in PATH." >&2
-  exit 1
-}
+mkdir -p "$GENERATED_DIR"
 
-command -v jq >/dev/null 2>&1 || {
-  echo "jq is required but was not found in PATH." >&2
-  exit 1
-}
+cd "$OPENTOFU_DIR"
+tofu init
+tofu apply
 
-cd "$TERRAFORM_DIR"
-terraform init
-terraform apply
+tofu output -raw talosconfig > "$GENERATED_DIR/talosconfig"
+tofu output -raw kubeconfig > "$GENERATED_DIR/kubeconfig"
+chmod 600 "$GENERATED_DIR/talosconfig" "$GENERATED_DIR/kubeconfig"
 
-NODES_JSON=$(terraform output -json k3s_nodes)
-SSH_USER=$(terraform output -raw ssh_user)
-
-printf '%s\n' "$NODES_JSON" | jq -r '.[].ipv4_address' | remove_known_host_entries
-
-{
-  printf '%s\n' '---'
-  printf '%s\n' 'all:'
-  printf '%s\n' '  children:'
-  printf '%s\n' '    k3s_servers:'
-  printf '%s\n' '      hosts:'
-  printf '%s\n' "$NODES_JSON" | jq -r --arg ssh_user "$SSH_USER" '.[] | "        \(.name):\n          ansible_host: \(.ipv4_address)\n          ansible_user: \($ssh_user)"'
-} > "$INVENTORY_PATH"
-
-cd "$ANSIBLE_DIR"
-ansible-playbook -i inventories/lab/hosts.yml playbooks/bootstrap-nodes.yml
-ansible-playbook -i inventories/lab/hosts.yml playbooks/install-k3s.yml
-
-"$KUBECONFIG_SCRIPT"
+printf '%s\n' "Generated Talos config: $GENERATED_DIR/talosconfig"
+printf '%s\n' "Generated kubeconfig: $GENERATED_DIR/kubeconfig"
+printf '%s\n' "Next: ./scripts/dev/bootstrap-cilium.sh"

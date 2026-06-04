@@ -5,13 +5,21 @@ This document captures the target on-prem hosting architecture for jam.
 Initial direction:
 
 - Self-hosted on-prem environment.
-- K3s as the Kubernetes distribution.
-- Infrastructure and cluster configuration stored in `infra/`.
+- Proxmox hosts Talos Linux VM nodes.
+- Talos provides the immutable Kubernetes node OS and Kubernetes bootstrap.
+- Cilium is the Kubernetes CNI and replaces kube-proxy.
+- OpenTofu automates Proxmox VM creation and Talos cluster bootstrap.
 
 Provisioning model:
 
-- Proxmox hosts the K3s VM nodes.
-- Terraform clones VM nodes from a Proxmox cloud-init template.
-- Cloud-init injects the initial SSH user and key.
-- Ansible bootstraps the operating system and installs K3s.
-- The lab setup supports either one K3s server or three K3s servers.
+- Talos nodes are cloned from a reusable Proxmox VM template built from Talos Image Factory assets.
+- The lab supports either one converged control-plane node or three converged control-plane nodes.
+- OpenTofu applies Talos machine configs and bootstraps Kubernetes.
+- kube-vip provides the Kubernetes API VIP.
+- Cilium is installed once by a bootstrap script, then GitOps takes over steady-state ownership.
+- Cilium L2 announcements provide lab `LoadBalancer` Service IP advertisement.
+
+Known lab tradeoffs:
+
+- Initial Talos maintenance access depends on DHCP reservations matching the configured VM MAC addresses.
+- Talos secrets and generated client configs are stored in local OpenTofu state/output for the lab. A production-ready setup should move those secrets into a dedicated secret manager.

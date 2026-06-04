@@ -1,0 +1,56 @@
+proxmox_endpoint  = "https://pve.example.lan:8006/api2/json"
+proxmox_api_token = "opentofu@pve!jam=replace-with-token-secret"
+proxmox_insecure  = true
+
+proxmox_node_name = "pve"
+template_vm_id    = 9000
+datastore_id      = "local-lvm"
+
+network_bridge = "vmbr0"
+vlan_id        = null
+
+cluster_name       = "jam-lab"
+talos_version      = "v1.12"
+kubernetes_version = "v1.35.4"
+
+talos_node_count         = 1
+talos_node_name_prefix   = "jam-talos"
+talos_node_vm_id_start   = 301
+talos_node_cpu_cores     = 4
+talos_node_memory_mb     = 8192
+talos_node_disk_size_gb  = 80
+talos_qemu_agent_enabled = false
+talos_install_disk       = "/dev/sda"
+talos_network_interface  = "eth0"
+
+talos_node_ipv4_addresses = [
+  "192.168.1.50",
+]
+
+# Optional but recommended. Use these MACs for DHCP reservations so OpenTofu can
+# reach the Talos maintenance API before the final static config is applied.
+talos_node_mac_addresses = [
+  "02:00:00:00:50:01",
+]
+
+# For a 3-node redundant cluster, use:
+# talos_node_count       = 3
+# talos_node_vm_id_start = 301
+# talos_node_ipv4_addresses = [
+#   "192.168.1.50",
+#   "192.168.1.51",
+#   "192.168.1.52",
+# ]
+# talos_node_mac_addresses = [
+#   "02:00:00:00:50:01",
+#   "02:00:00:00:50:02",
+#   "02:00:00:00:50:03",
+# ]
+
+ipv4_prefix_length = 24
+ipv4_gateway       = "192.168.1.1"
+dns_domain         = "home.arpa"
+dns_servers        = ["192.168.1.1"]
+
+# Use a free IP in the same L2 subnet that kube-vip can advertise.
+api_virtual_ip = "192.168.1.60"

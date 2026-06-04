@@ -4,67 +4,51 @@ This directory contains the infrastructure and operations configuration for the 
 
 ## Layout
 
-- `terraform/`: infrastructure provisioning and reusable modules.
-- `ansible/`: node bootstrap, K3s installation, and host hardening.
-- `k3s/`: K3s-specific configuration, bootstrap manifests, and helper scripts.
+- `opentofu/`: Proxmox VM provisioning and Talos cluster bootstrap.
+- `talos/`: Talos machine configuration patches and generated local client configs.
+- `platform/`: first-wave platform bootstrap manifests, including Cilium and kube-vip notes.
 - `kubernetes/`: Kubernetes manifests organized as shared bases and environment overlays.
 - `helm/`: Helm charts and per-environment values.
 - `gitops/`: Flux or Argo CD cluster reconciliation configuration.
 - `secrets/`: encrypted secret definitions only.
 - `policies/`: network, admission, and pod security policies.
 
-## K3s lab flow
+## Talos Lab Flow
 
-The initial lab environment supports either one K3s server node or a three-server K3s cluster running as VMs on Proxmox.
+The lab environment supports either one converged Talos control-plane node or a three-node redundant control-plane cluster running as VMs on Proxmox. Separate worker pools are intentionally out of scope for now.
 
-1. Create a Debian or Ubuntu cloud-init VM template in Proxmox.
-2. Copy `terraform/environments/lab/terraform.tfvars.example` to `terraform.tfvars` and fill in the local values.
-3. Set `k3s_node_count` to `1` or `3` and provide the matching number of static IP addresses.
-4. Run Terraform from `terraform/environments/lab`.
-5. Copy `ansible/inventories/lab/hosts.yml.example` to `hosts.yml` and set the VM IPs from Terraform output.
-6. Run the Ansible bootstrap and K3s install playbooks.
-
-```powershell
-cd infra/terraform/environments/lab
-terraform init
-terraform apply
-
-cd ../../../ansible
-ansible-playbook -i inventories/lab/hosts.yml playbooks/bootstrap-nodes.yml
-ansible-playbook -i inventories/lab/hosts.yml playbooks/install-k3s.yml
-```
-
-Or run the combined local orchestration script:
+1. Create a Talos Image Factory based VM template in Proxmox.
+2. Copy `opentofu/environments/lab/lab.auto.tfvars.example` to `lab.auto.tfvars` and fill in the local values.
+3. Set `talos_node_count` to `1` or `3` and provide matching static IP addresses.
+4. Configure DHCP reservations for the static MAC/IP pairs used for first Talos maintenance contact.
+5. Run OpenTofu from `opentofu/environments/lab`.
+6. Bootstrap Cilium with `scripts/dev/bootstrap-cilium.sh`.
+7. Hand Cilium ownership to GitOps after the cluster is healthy.
 
 ```powershell
-.\scripts\dev\provision-lab.ps1
+cd infra/opentofu/environments/lab
+tofu init
+tofu apply
+
+cd ../../../..
+.\scripts\dev\bootstrap-cilium.ps1
 ```
 
 On Linux:
 
 ```sh
 ./scripts/dev/provision-lab.sh
+./scripts/dev/bootstrap-cilium.sh
 ```
 
-To destroy the Terraform-managed lab VMs from Linux:
+Generated client configs are stored in:
 
-```sh
-./scripts/dev/deprovision-lab.sh
+```text
+infra/talos/generated/
 ```
 
-After provisioning, the generated kubeconfig is stored in `infra/k3s/generated/`.
+OpenTofu owns the Proxmox VMs and Talos bootstrap. The Cilium bootstrap script performs the first CNI install because the cluster starts without a CNI and with kube-proxy disabled. GitOps should own Cilium configuration and upgrades after that initial bootstrap.
 
-```sh
-./infra/k3s/scripts/kubeconfig.sh
-kubectl get nodes
-```
+Until Cilium is installed, Kubernetes nodes may report `NotReady`; that is expected for this bootstrap model.
 
-The script installs the generated kubeconfig into `~/.kube/config` and backs up an existing default kubeconfig first.
-
-Terraform owns the Proxmox VM. Ansible owns host configuration and K3s installation. Kubernetes add-ons are intentionally left for a later GitOps-driven step.
-
-In three-node mode, the first inventory host initializes the K3s cluster and the remaining two servers join it. Keep the server count odd; the supported configuration options are intentionally limited to `1` and `3`.
-
-For three-node mode, set `k3s_api_endpoint` in `ansible/inventories/lab/group_vars/k3s_servers.yml` to a stable API VIP, load balancer, or DNS name before installing K3s. Add any extra certificate names or IPs to `k3s_tls_sans`. The default endpoint is the first server IP for single-node lab convenience.
-
-See `docs/runbooks/proxmox-cloud-init-template.md` for Proxmox template setup and `docs/runbooks/ops-runner.md` for Linux runner setup notes.
+See `docs/runbooks/proxmox-talos-template.md` for Proxmox template setup and `docs/runbooks/ops-runner.md` for runner setup notes.

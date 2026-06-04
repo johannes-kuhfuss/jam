@@ -1,55 +1,32 @@
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = Resolve-Path "$PSScriptRoot\..\.."
-$TerraformDir = Join-Path $RepoRoot "infra\terraform\environments\lab"
-$AnsibleDir = Join-Path $RepoRoot "infra\ansible"
-$InventoryPath = Join-Path $AnsibleDir "inventories\lab\hosts.yml"
+$OpenTofuDir = Join-Path $RepoRoot "infra\opentofu\environments\lab"
+$GeneratedDir = Join-Path $RepoRoot "infra\talos\generated"
+$TfvarsPath = Join-Path $OpenTofuDir "lab.auto.tfvars"
 
-if (-not (Test-Path (Join-Path $TerraformDir "terraform.tfvars"))) {
-    throw "Missing $TerraformDir\terraform.tfvars. Copy terraform.tfvars.example and fill in your Proxmox values."
+if (-not (Test-Path $TfvarsPath)) {
+    throw "Missing $TfvarsPath. Copy lab.auto.tfvars.example and fill in your Proxmox/Talos values."
 }
 
-Push-Location $TerraformDir
-try {
-    terraform init
-    terraform apply
+if (-not (Get-Command tofu -ErrorAction SilentlyContinue)) {
+    throw "tofu is required but was not found in PATH."
+}
 
-    $Nodes = terraform output -json k3s_nodes | ConvertFrom-Json
-    $SshUser = terraform output -raw ssh_user
+New-Item -ItemType Directory -Force -Path $GeneratedDir | Out-Null
+
+Push-Location $OpenTofuDir
+try {
+    tofu init
+    tofu apply
+
+    tofu output -raw talosconfig | Set-Content -NoNewline -Path (Join-Path $GeneratedDir "talosconfig")
+    tofu output -raw kubeconfig | Set-Content -NoNewline -Path (Join-Path $GeneratedDir "kubeconfig")
 }
 finally {
     Pop-Location
 }
 
-$ExampleInventory = Join-Path $AnsibleDir "inventories\lab\hosts.yml.example"
-if (-not (Test-Path $InventoryPath)) {
-    Copy-Item $ExampleInventory $InventoryPath
-}
-
-$InventoryLines = foreach ($Node in $Nodes) {
-    @"
-        $($Node.name):
-          ansible_host: $($Node.ipv4_address)
-          ansible_user: ${SshUser}
-"@
-}
-
-$Inventory = @"
----
-all:
-  children:
-    k3s_servers:
-      hosts:
-$($InventoryLines -join "`n")
-"@
-
-Set-Content -Path $InventoryPath -Value $Inventory
-
-Push-Location $AnsibleDir
-try {
-    ansible-playbook -i inventories/lab/hosts.yml playbooks/bootstrap-nodes.yml
-    ansible-playbook -i inventories/lab/hosts.yml playbooks/install-k3s.yml
-}
-finally {
-    Pop-Location
-}
+Write-Host "Generated Talos config: $GeneratedDir\talosconfig"
+Write-Host "Generated kubeconfig: $GeneratedDir\kubeconfig"
+Write-Host "Next: .\scripts\dev\bootstrap-cilium.ps1"

@@ -27,7 +27,7 @@ go.work.sum
 # env file
 .env
 
-# Terraform
+# OpenTofu / Terraform-compatible state
 **/.terraform/
 *.tfstate
 *.tfstate.*
@@ -40,12 +40,9 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Ansible
-*.retry
-infra/ansible/inventories/*/hosts.yml
-
 # Generated cluster access files
-infra/k3s/generated/
+infra/talos/generated/*
+!infra/talos/generated/.gitkeep
 
 # Editor/IDE
 # .idea/
@@ -53,4 +50,3 @@ infra/k3s/generated/
 
 # JKU
 Notes.txt
-

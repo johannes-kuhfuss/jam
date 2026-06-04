@@ -1,7 +1,0 @@
-write-kubeconfig-mode: "0600"
-
-# Foundational services such as ingress, load balancing, monitoring, and
-# GitOps will be installed later as explicit Kubernetes add-ons.
-disable:
-  - traefik
-  - servicelb
