@@ -8,6 +8,14 @@ GENERATED_DIR="$REPO_ROOT/infra/talos/generated"
 KUBE_DIR="$HOME/.kube"
 TARGET_KUBECONFIG="$KUBE_DIR/config"
 MANAGED_KUBECONFIG_MARKER="$KUBE_DIR/config.jam-managed"
+if [ -n "${XDG_CONFIG_HOME:-}" ]; then
+  TALOS_DIR="$XDG_CONFIG_HOME/talos"
+  TARGET_TALOSCONFIG="$TALOS_DIR/config.yaml"
+else
+  TALOS_DIR="$HOME/.talos"
+  TARGET_TALOSCONFIG="$TALOS_DIR/config"
+fi
+MANAGED_TALOSCONFIG_MARKER="$TALOS_DIR/config.jam-managed"
 
 install_default_kubeconfig() {
   mkdir -p "$KUBE_DIR"
@@ -24,6 +32,23 @@ install_default_kubeconfig() {
   cp "$GENERATED_DIR/kubeconfig" "$TARGET_KUBECONFIG"
   chmod 600 "$TARGET_KUBECONFIG"
   printf '%s\n' "$backup_path" > "$MANAGED_KUBECONFIG_MARKER"
+}
+
+install_default_talosconfig() {
+  mkdir -p "$TALOS_DIR"
+
+  backup_path=""
+  if [ -f "$TARGET_TALOSCONFIG" ] && [ ! -f "$MANAGED_TALOSCONFIG_MARKER" ]; then
+    backup_path="$TALOS_DIR/config.jam-backup.$(date +%Y%m%d%H%M%S)"
+    cp "$TARGET_TALOSCONFIG" "$backup_path"
+    chmod 600 "$backup_path"
+  elif [ -f "$MANAGED_TALOSCONFIG_MARKER" ]; then
+    backup_path=$(head -n 1 "$MANAGED_TALOSCONFIG_MARKER")
+  fi
+
+  cp "$GENERATED_DIR/talosconfig" "$TARGET_TALOSCONFIG"
+  chmod 600 "$TARGET_TALOSCONFIG"
+  printf '%s\n' "$backup_path" > "$MANAGED_TALOSCONFIG_MARKER"
 }
 
 if [ ! -f "$OPENTOFU_DIR/lab.auto.tfvars" ]; then
@@ -46,8 +71,10 @@ tofu output -raw talosconfig > "$GENERATED_DIR/talosconfig"
 tofu output -raw kubeconfig > "$GENERATED_DIR/kubeconfig"
 chmod 600 "$GENERATED_DIR/talosconfig" "$GENERATED_DIR/kubeconfig"
 install_default_kubeconfig
+install_default_talosconfig
 
 printf '%s\n' "Generated Talos config: $GENERATED_DIR/talosconfig"
 printf '%s\n' "Generated kubeconfig: $GENERATED_DIR/kubeconfig"
 printf '%s\n' "Installed default kubeconfig: $TARGET_KUBECONFIG"
+printf '%s\n' "Installed default talosconfig: $TARGET_TALOSCONFIG"
 printf '%s\n' "Next: ./scripts/dev/bootstrap-cilium.sh"
