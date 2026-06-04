@@ -25,17 +25,6 @@ The lab environment supports either one converged Talos control-plane node or a 
 6. Bootstrap Cilium with `scripts/dev/bootstrap-cilium.sh`.
 7. Hand Cilium ownership to GitOps after the cluster is healthy.
 
-```powershell
-cd infra/opentofu/environments/lab
-tofu init
-tofu apply
-
-cd ../../../..
-.\scripts\dev\bootstrap-cilium.ps1
-```
-
-On Linux:
-
 ```sh
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
