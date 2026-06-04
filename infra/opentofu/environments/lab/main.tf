@@ -13,6 +13,7 @@ locals {
 
   node_common_patch = {
     cluster = {
+      allowSchedulingOnControlPlanes = true
       network = {
         cni = {
           name = "none"
