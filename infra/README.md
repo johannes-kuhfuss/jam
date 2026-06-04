@@ -9,7 +9,7 @@ This directory contains the infrastructure and operations configuration for the 
 - `platform/`: first-wave platform bootstrap manifests, including Cilium and kube-vip notes.
 - `kubernetes/`: Kubernetes manifests organized as shared bases and environment overlays.
 - `helm/`: Helm charts and per-environment values.
-- `gitops/`: Flux or Argo CD cluster reconciliation configuration.
+- `gitops/`: Flux cluster reconciliation configuration.
 - `secrets/`: encrypted secret definitions only.
 - `policies/`: network, admission, and pod security policies.
 
@@ -23,12 +23,14 @@ The lab environment supports either one converged Talos control-plane node or a 
 4. Configure DHCP reservations for the static MAC/IP pairs used for first Talos maintenance contact.
 5. Run OpenTofu from `opentofu/environments/lab`.
 6. Bootstrap Cilium with `scripts/dev/bootstrap-cilium.sh`.
-7. Run the blackbox smoke test with `scripts/dev/blackbox-lab.sh`.
-8. Hand Cilium ownership to GitOps after the cluster is healthy.
+7. Bootstrap Flux with `scripts/dev/bootstrap-gitops.sh`.
+8. Run the blackbox smoke test with `scripts/dev/blackbox-lab.sh`.
+9. Hand Cilium ownership to GitOps after the cluster is healthy.
 
 ```sh
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
+./scripts/dev/bootstrap-gitops.sh
 ./scripts/dev/blackbox-lab.sh
 ```
 
@@ -40,7 +42,9 @@ infra/talos/generated/
 
 The provisioning script also installs the generated kubeconfig to `~/.kube/config` and the generated talosconfig to the default `talosctl` config path, backing up existing default configs first. The installed kubeconfig uses the first Talos node IP during bootstrap; after Cilium and kube-vip are healthy, the Cilium bootstrap script switches it back to the API VIP. After provisioning, `kubectl` and `talosctl` can use the lab cluster without extra config flags.
 
-OpenTofu owns the Proxmox VMs and Talos bootstrap. The Cilium bootstrap script performs the first CNI install because the cluster starts without a CNI and with kube-proxy disabled. GitOps should own Cilium configuration and upgrades after that initial bootstrap.
+OpenTofu owns the Proxmox VMs and Talos bootstrap. The Cilium bootstrap script performs the first CNI install because the cluster starts without a CNI and with kube-proxy disabled. The GitOps bootstrap script installs Flux after Cilium is healthy and points it at `infra/gitops/clusters/lab` in the public GitHub repository over HTTPS.
+
+GitOps should own Cilium configuration and upgrades after that initial bootstrap.
 
 Until Cilium is installed, Kubernetes nodes may report `NotReady`; that is expected for this bootstrap model.
 

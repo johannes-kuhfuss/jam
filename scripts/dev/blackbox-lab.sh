@@ -24,7 +24,7 @@ require_file() {
   description="$2"
 
   if [ ! -f "$path" ]; then
-    echo "Missing $description at $path. Run scripts/dev/provision-lab.sh and scripts/dev/bootstrap-cilium.sh first, or set the matching environment variable." >&2
+    echo "Missing $description at $path. Run scripts/dev/provision-lab.sh, scripts/dev/bootstrap-cilium.sh, and scripts/dev/bootstrap-gitops.sh first, or set the matching environment variable." >&2
     exit 1
   fi
 }
@@ -62,6 +62,15 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n kube-system rollout status daemonset/
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n kube-system rollout status deployment/cilium-operator --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" get crd ciliumloadbalancerippools.cilium.io ciliuml2announcementpolicies.cilium.io >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n kube-system get pods -l k8s-app=cilium -o wide
+
+print_step "Checking Flux rollout and reconciliation resources"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment/source-controller --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment/kustomize-controller --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment/helm-controller --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment/notification-controller --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" get crd gitrepositories.source.toolkit.fluxcd.io kustomizations.kustomize.toolkit.fluxcd.io >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get gitrepositories.source.toolkit.fluxcd.io jam >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get kustomizations.kustomize.toolkit.fluxcd.io jam-lab >/dev/null
 
 print_step "Deploying smoke workload"
 kubectl --kubeconfig "$KUBECONFIG_PATH" delete namespace "$SMOKE_NAMESPACE" --ignore-not-found --wait=true --timeout="$SMOKE_TIMEOUT" >/dev/null

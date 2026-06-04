@@ -1,6 +1,6 @@
 # Ops Runner
 
-Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium bootstrap, and Kubernetes administration.
+Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium bootstrap, Flux bootstrap, and Kubernetes administration.
 
 ## Required Tools
 
@@ -8,10 +8,10 @@ Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium 
 - `talosctl`
 - `kubectl`
 - `helm`
+- `flux`
 
 Recommended tools for later cluster add-ons:
 
-- `flux`
 - `yq`
 
 ## Network Access
@@ -92,9 +92,10 @@ dns_servers        = ["192.168.1.1"]
 Run the combined lab provisioning script:
 
 ```sh
-chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh scripts/dev/bootstrap-cilium.sh
+chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh scripts/dev/bootstrap-cilium.sh scripts/dev/bootstrap-gitops.sh
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
+./scripts/dev/bootstrap-gitops.sh
 ```
 
 The script runs OpenTofu and stores generated client configs under:
@@ -110,6 +111,8 @@ It also installs the generated kubeconfig to the default kubeconfig path:
 ```
 
 The installed kubeconfig initially uses the first Talos node IP as the Kubernetes API server. This keeps `kubectl`, Helm, and the Cilium bootstrap working before kube-vip starts advertising `api_virtual_ip`. After Cilium and kube-vip are healthy, `scripts/dev/bootstrap-cilium.sh` switches the generated and default kubeconfig back to the API VIP.
+
+`scripts/dev/bootstrap-gitops.sh` installs Flux after Cilium is healthy and configures it to reconcile the public repository at `https://github.com/johannes-kuhfuss/jam.git` on branch `main`, path `infra/gitops/clusters/lab`. Because the repository is public, the bootstrap uses read-only HTTPS and does not require deploy keys or tokens.
 
 If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
 

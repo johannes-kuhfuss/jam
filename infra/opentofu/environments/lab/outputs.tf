@@ -38,6 +38,6 @@ output "talos_node_ips" {
 }
 
 output "cilium_bootstrap_hint" {
-  value       = "Run scripts/dev/bootstrap-cilium.sh after tofu apply and kubeconfig retrieval."
+  value       = "Run scripts/dev/bootstrap-cilium.sh after tofu apply and kubeconfig retrieval, then scripts/dev/bootstrap-gitops.sh after Cilium is healthy."
   description = "Next step for Cilium bootstrap."
 }
