@@ -11,7 +11,7 @@ export TEMPLATE_ID=9000
 export TEMPLATE_NAME=talos-nocloud
 export STORAGE=local-lvm
 export BRIDGE=vmbr0
-export TALOS_VERSION=v1.12.0
+export TALOS_VERSION=v1.13.3
 export SCHEMATIC_ID=replace-with-image-factory-schematic-id
 ```
 
@@ -20,6 +20,14 @@ export SCHEMATIC_ID=replace-with-image-factory-schematic-id
 ## Create The Template
 
 Use Talos Image Factory to create a `nocloud` raw disk image for the pinned Talos version and schematic. Prefer a custom schematic when you need system extensions such as the QEMU guest agent.
+1. Navigate to the Talos Image Factory
+2. As "Hardware Type" choose "Cloud Server"
+3. Choose the recommended Talos version and update the version number in the EXPORT command (see above)
+4. For "Cloud" choose "Nocloud"
+5. For machine architecture choose "amd64" and leave "SecureBoot" disabled
+6. From the "System Extensions" select the "siderolabs/qemu-guest-agent"
+7. Do not change anything on the "Customization" page
+8. Note down your schematic image ID and adjust the EXPORT command accordingly
 
 ```sh
 cd /var/lib/vz/template/iso
@@ -31,8 +39,8 @@ xz -d "talos-${TALOS_VERSION}-${SCHEMATIC_ID}-nocloud-amd64.raw.xz"
 
 qm create "$TEMPLATE_ID" \
   --name "$TEMPLATE_NAME" \
-  --memory 2048 \
-  --cores 2 \
+  --memory 8192 \
+  --cores 4 \
   --net0 virtio,bridge="$BRIDGE" \
   --scsihw virtio-scsi-pci \
   --ostype l26 \
