@@ -5,6 +5,26 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 OPENTOFU_DIR="$REPO_ROOT/infra/opentofu/environments/lab"
 GENERATED_DIR="$REPO_ROOT/infra/talos/generated"
+KUBE_DIR="$HOME/.kube"
+TARGET_KUBECONFIG="$KUBE_DIR/config"
+MANAGED_KUBECONFIG_MARKER="$KUBE_DIR/config.jam-managed"
+
+restore_default_kubeconfig() {
+  [ -f "$MANAGED_KUBECONFIG_MARKER" ] || return 0
+
+  backup_path=$(head -n 1 "$MANAGED_KUBECONFIG_MARKER")
+
+  if [ -n "$backup_path" ] && [ -f "$backup_path" ]; then
+    mv "$backup_path" "$TARGET_KUBECONFIG"
+    chmod 600 "$TARGET_KUBECONFIG"
+    printf 'Restored previous kubeconfig from %s\n' "$backup_path"
+  else
+    rm -f "$TARGET_KUBECONFIG"
+    printf 'Removed lab kubeconfig from %s\n' "$TARGET_KUBECONFIG"
+  fi
+
+  rm -f "$MANAGED_KUBECONFIG_MARKER"
+}
 
 if [ ! -f "$OPENTOFU_DIR/lab.auto.tfvars" ]; then
   echo "Missing $OPENTOFU_DIR/lab.auto.tfvars. OpenTofu needs it to destroy the lab resources." >&2
@@ -21,5 +41,6 @@ tofu init
 tofu destroy
 
 rm -f "$GENERATED_DIR/talosconfig" "$GENERATED_DIR/kubeconfig"
+restore_default_kubeconfig
 
 printf '%s\n' "Lab resources destroyed. Removed generated Talos and Kubernetes client configs."

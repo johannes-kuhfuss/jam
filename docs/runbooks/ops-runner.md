@@ -103,10 +103,17 @@ The script runs OpenTofu and stores generated client configs under:
 infra/talos/generated/
 ```
 
-Use the generated kubeconfig:
+It also installs the generated kubeconfig to the default kubeconfig path:
+
+```text
+~/.kube/config
+```
+
+If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
+
+Use the cluster with plain `kubectl`:
 
 ```sh
-export KUBECONFIG="$PWD/infra/talos/generated/kubeconfig"
 kubectl get nodes
 ```
 
@@ -118,6 +125,6 @@ Destroy the OpenTofu-managed lab VMs from the runner:
 ./scripts/dev/deprovision-lab.sh
 ```
 
-The script runs `tofu destroy` and removes generated Talos/Kubernetes client configs. It does not delete the Proxmox VM template.
+The script runs `tofu destroy`, removes generated Talos/Kubernetes client configs, and restores the previous default kubeconfig when `~/.kube/config.jam-managed` is present. It does not delete the Proxmox VM template.
 
 See `docs/runbooks/proxmox-talos-template.md` for the Proxmox VM template setup.
