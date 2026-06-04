@@ -75,9 +75,9 @@ Both sides are required: the Talos image must include and run the guest agent ex
 
 ## First Contact Networking
 
-OpenTofu must reach the Talos maintenance API before the final static network configuration is applied. Use static MAC addresses and DHCP reservations so each cloned VM initially receives the same IP listed in `talos_node_ipv4_addresses`.
+OpenTofu must reach the Talos maintenance API before the final static network configuration is applied. Use static MAC addresses and DHCP reservations so each cloned VM initially receives the same IP listed in `talos_node_ipv4_addresses` in `infra/opentofu/environments/lab/lab.auto.tfvars`.
 
-The VM MAC addresses are configured in:
+The VM MAC addresses are configured in `infra/opentofu/environments/lab/lab.auto.tfvars`:
 
 ```hcl
 talos_node_mac_addresses = [
