@@ -38,7 +38,7 @@ qm create "$TEMPLATE_ID" \
   --ostype l26 \
   --serial0 socket \
   --vga serial0 \
-  --agent disabled=1
+  --agent enabled=0
 
 qm importdisk "$TEMPLATE_ID" \
   "talos-${TALOS_VERSION}-${SCHEMATIC_ID}-nocloud-amd64.raw" \
@@ -51,11 +51,19 @@ qm set "$TEMPLATE_ID" \
 qm template "$TEMPLATE_ID"
 ```
 
-If the schematic includes `siderolabs/qemu-guest-agent`, enable the guest agent on the template and set this in `lab.auto.tfvars`:
+If the schematic includes `siderolabs/qemu-guest-agent`, enable the guest agent on the template:
+
+```sh
+qm set "$TEMPLATE_ID" --agent enabled=1
+```
+
+Then set this in `lab.auto.tfvars`:
 
 ```hcl
 talos_qemu_agent_enabled = true
 ```
+
+Both sides are required: the Talos image must include and run the guest agent extension, and Proxmox must expose the QEMU guest agent channel to the VM.
 
 ## First Contact Networking
 
