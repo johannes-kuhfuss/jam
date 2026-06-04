@@ -23,11 +23,13 @@ The lab environment supports either one converged Talos control-plane node or a 
 4. Configure DHCP reservations for the static MAC/IP pairs used for first Talos maintenance contact.
 5. Run OpenTofu from `opentofu/environments/lab`.
 6. Bootstrap Cilium with `scripts/dev/bootstrap-cilium.sh`.
-7. Hand Cilium ownership to GitOps after the cluster is healthy.
+7. Run the blackbox smoke test with `scripts/dev/blackbox-lab.sh`.
+8. Hand Cilium ownership to GitOps after the cluster is healthy.
 
 ```sh
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
+./scripts/dev/blackbox-lab.sh
 ```
 
 Generated client configs are stored in:
@@ -41,5 +43,7 @@ The provisioning script also installs the generated kubeconfig to `~/.kube/confi
 OpenTofu owns the Proxmox VMs and Talos bootstrap. The Cilium bootstrap script performs the first CNI install because the cluster starts without a CNI and with kube-proxy disabled. GitOps should own Cilium configuration and upgrades after that initial bootstrap.
 
 Until Cilium is installed, Kubernetes nodes may report `NotReady`; that is expected for this bootstrap model.
+
+The blackbox test verifies that `kubectl` can reach the cluster, `talosctl` can reach the Talos API, Cilium and its CRDs are present, and a temporary container workload can be scheduled and reached through an in-cluster Service. It uses `infra/talos/generated/kubeconfig` and `infra/talos/generated/talosconfig` by default; override them with `KUBECONFIG` and `TALOSCONFIG` if needed.
 
 See `docs/runbooks/proxmox-talos-template.md` for Proxmox template setup and `docs/runbooks/ops-runner.md` for runner setup notes.
