@@ -4,6 +4,8 @@ The lab cluster is created without a Talos-managed CNI and with kube-proxy disab
 
 After Talos bootstrap, nodes may remain `NotReady` until Cilium is installed. Run the Cilium bootstrap script immediately after `scripts/dev/provision-lab.sh` completes.
 
+The bootstrap script waits for the Cilium CRDs before applying `l2-lab.yaml`. This avoids discovery errors while the Cilium chart/operator is still registering `CiliumLoadBalancerIPPool` and `CiliumL2AnnouncementPolicy`.
+
 `values.yaml` follows the Talos guidance for Cilium with kube-proxy replacement:
 
 - `kubeProxyReplacement: true`
