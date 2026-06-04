@@ -15,6 +15,11 @@ output "kubernetes_api_endpoint" {
   description = "Kubernetes API endpoint configured in the Talos cluster."
 }
 
+output "bootstrap_kubernetes_api_endpoint" {
+  value       = "https://${var.talos_node_ipv4_addresses[0]}:6443"
+  description = "Direct first-node Kubernetes API endpoint used before the API VIP is advertised."
+}
+
 output "talosconfig" {
   value       = data.talos_client_configuration.this.talos_config
   description = "Generated talosconfig. Store securely."

@@ -69,6 +69,12 @@ tofu apply
 
 tofu output -raw talosconfig > "$GENERATED_DIR/talosconfig"
 tofu output -raw kubeconfig > "$GENERATED_DIR/kubeconfig"
+api_endpoint=$(tofu output -raw kubernetes_api_endpoint)
+bootstrap_api_endpoint=$(tofu output -raw bootstrap_kubernetes_api_endpoint)
+if [ "$api_endpoint" != "$bootstrap_api_endpoint" ]; then
+  sed "s|$api_endpoint|$bootstrap_api_endpoint|g" "$GENERATED_DIR/kubeconfig" > "$GENERATED_DIR/kubeconfig.bootstrap"
+  mv "$GENERATED_DIR/kubeconfig.bootstrap" "$GENERATED_DIR/kubeconfig"
+fi
 chmod 600 "$GENERATED_DIR/talosconfig" "$GENERATED_DIR/kubeconfig"
 install_default_kubeconfig
 install_default_talosconfig
