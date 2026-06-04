@@ -20,6 +20,7 @@ export SCHEMATIC_ID=replace-with-image-factory-schematic-id
 ## Create The Template
 
 Use Talos Image Factory to create a `nocloud` raw disk image for the pinned Talos version and schematic. Prefer a custom schematic when you need system extensions such as the QEMU guest agent.
+
 1. Navigate to the Talos Image Factory
 2. As "Hardware Type" choose "Cloud Server"
 3. Choose the recommended Talos version and update the version number in the EXPORT command (see above)
@@ -104,4 +105,3 @@ talos_node_mac_addresses = [
 ```
 
 For a three-node lab, reserve all three MAC/IP pairs.
-
