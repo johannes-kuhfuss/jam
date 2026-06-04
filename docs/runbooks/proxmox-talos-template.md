@@ -19,7 +19,7 @@ export SCHEMATIC_ID=replace-with-image-factory-schematic-id
 
 ## Create The Template
 
-Use Talos Image Factory to create a `nocloud` raw disk image for the pinned Talos version and schematic. Prefer a custom schematic when you need system extensions such as the QEMU guest agent.
+Use Talos Image Factory to create a `nocloud` raw disk image for the pinned Talos version and schematic. The schematic should include the QEMU guest agent extension and a serial console kernel argument for the Proxmox console.
 
 1. Navigate to the Talos Image Factory
 2. As "Hardware Type" choose "Cloud Server"
@@ -27,8 +27,19 @@ Use Talos Image Factory to create a `nocloud` raw disk image for the pinned Talo
 4. For "Cloud" choose "Nocloud"
 5. For machine architecture choose "amd64" and leave "SecureBoot" disabled
 6. From the "System Extensions" select the "siderolabs/qemu-guest-agent"
-7. Do not change anything on the "Customization" page
+7. On the "Customization" page, add this extra kernel command line argument: `console=ttyS0,115200`
 8. Note down your schematic image ID and adjust the EXPORT command accordingly
+
+The equivalent schematic YAML is:
+
+```yaml
+customization:
+  extraKernelArgs:
+    - console=ttyS0,115200
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/qemu-guest-agent
+```
 
 ```sh
 cd /var/lib/vz/template/iso
@@ -59,6 +70,8 @@ qm set "$TEMPLATE_ID" \
 
 qm template "$TEMPLATE_ID"
 ```
+
+The Proxmox `--serial0 socket` and `--vga serial0` settings expose the serial device to the VM console. The Image Factory `extraKernelArgs` setting makes Talos write kernel and console output to that serial device.
 
 If the schematic includes `siderolabs/qemu-guest-agent`, enable the guest agent on the template:
 
