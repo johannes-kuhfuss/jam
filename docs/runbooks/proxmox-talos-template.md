@@ -73,20 +73,6 @@ talos_qemu_agent_enabled = true
 
 Both sides are required: the Talos image must include and run the guest agent extension, and Proxmox must expose the QEMU guest agent channel to the VM.
 
-## First Contact Networking
-
-OpenTofu must reach the Talos maintenance API before the final static network configuration is applied. Use static MAC addresses and DHCP reservations so each cloned VM initially receives the same IP listed in `talos_node_ipv4_addresses` in `infra/opentofu/environments/lab/lab.auto.tfvars`.
-
-The VM MAC addresses are configured in `infra/opentofu/environments/lab/lab.auto.tfvars`:
-
-```hcl
-talos_node_mac_addresses = [
-  "02:00:00:00:50:01",
-]
-```
-
-For a three-node lab, reserve all three MAC/IP pairs.
-
 ## OpenTofu Token Permissions
 
 The Proxmox API token used by OpenTofu needs permission to clone the template and create VMs.
@@ -104,3 +90,18 @@ Use the generated token value in `lab.auto.tfvars`:
 ```hcl
 proxmox_api_token = "opentofu@pve!jam=<token-value>"
 ```
+
+## First Contact Networking
+
+OpenTofu must reach the Talos maintenance API before the final static network configuration is applied. Use static MAC addresses and DHCP reservations so each cloned VM initially receives the same IP listed in `talos_node_ipv4_addresses` in `infra/opentofu/environments/lab/lab.auto.tfvars`.
+
+The VM MAC addresses are configured in `infra/opentofu/environments/lab/lab.auto.tfvars`:
+
+```hcl
+talos_node_mac_addresses = [
+  "02:00:00:00:50:01",
+]
+```
+
+For a three-node lab, reserve all three MAC/IP pairs.
+
