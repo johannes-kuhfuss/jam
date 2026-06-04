@@ -213,10 +213,16 @@ resource "talos_machine_configuration_apply" "controlplane" {
   config_patches = [
     yamlencode(local.node_common_patch),
     yamlencode(local.kube_vip_patch),
+    jsonencode([
+      {
+        op    = "add"
+        path  = "/machine/network/hostname"
+        value = each.key
+      }
+    ]),
     yamlencode({
       machine = {
         network = {
-          hostname = each.key
           interfaces = [
             {
               interface = var.talos_network_interface
