@@ -97,7 +97,13 @@ variable "talos_node_memory_mb" {
 variable "talos_node_disk_size_gb" {
   type        = number
   description = "Root disk size for each Talos node in GiB."
-  default     = 80
+  default     = 40
+}
+
+variable "longhorn_data_disk_size_gb" {
+  type        = number
+  description = "Dedicated Longhorn data disk size for each Talos node in GiB."
+  default     = 40
 }
 
 variable "talos_qemu_agent_enabled" {
@@ -126,6 +132,18 @@ variable "talos_install_disk" {
   type        = string
   description = "Disk Talos installs itself to."
   default     = "/dev/sda"
+}
+
+variable "talos_installer_image" {
+  type        = string
+  description = "Optional Talos installer image. Use an Image Factory installer with siderolabs/iscsi-tools and siderolabs/util-linux-tools for Longhorn."
+  default     = null
+}
+
+variable "longhorn_data_disk_selector" {
+  type        = string
+  description = "Talos CEL disk selector used by UserVolumeConfig for the Longhorn data disk."
+  default     = "!system_disk"
 }
 
 variable "talos_network_interface" {

@@ -77,6 +77,24 @@ variable "disk_file_format" {
   default     = "raw"
 }
 
+variable "data_disk_size_gb" {
+  type        = number
+  description = "Optional additional data disk size in GiB."
+  default     = null
+}
+
+variable "data_disk_datastore_id" {
+  type        = string
+  description = "Optional datastore for the additional data disk. Defaults to datastore_id."
+  default     = null
+}
+
+variable "data_disk_file_format" {
+  type        = string
+  description = "Additional data disk file format, for example raw or qcow2."
+  default     = "raw"
+}
+
 variable "network_bridge" {
   type        = string
   description = "Proxmox network bridge."

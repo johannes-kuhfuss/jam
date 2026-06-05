@@ -72,6 +72,13 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" get crd gitrepositories.source.toolkit.f
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get gitrepositories.source.toolkit.fluxcd.io jam >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get kustomizations.kustomize.toolkit.fluxcd.io jam-lab >/dev/null
 
+print_step "Checking Longhorn rollout and default StorageClass"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system get helmreleases.helm.toolkit.fluxcd.io longhorn >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status deployment/longhorn-driver-deployer --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status deployment/longhorn-ui --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status daemonset/longhorn-manager --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" get storageclass longhorn -o jsonpath='{.metadata.annotations.storageclass\.kubernetes\.io/is-default-class}' | grep -q '^true$'
+
 print_step "Deploying smoke workload"
 kubectl --kubeconfig "$KUBECONFIG_PATH" delete namespace "$SMOKE_NAMESPACE" --ignore-not-found --wait=true --timeout="$SMOKE_TIMEOUT" >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" create namespace "$SMOKE_NAMESPACE" >/dev/null

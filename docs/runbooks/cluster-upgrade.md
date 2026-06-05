@@ -9,4 +9,6 @@ Current policy:
 - Pin `kubernetes_version` in `infra/opentofu/environments/lab/lab.auto.tfvars`.
 - Pin the Cilium chart version through `CILIUM_VERSION` when running `scripts/dev/bootstrap-cilium.sh`; otherwise the script installs the chart repository default.
 - Pin the Flux version by installing the desired `flux` CLI version on the ops runner before running `scripts/dev/bootstrap-gitops.sh`; otherwise the script installs the controller version bundled with the local CLI.
+- Pin the Longhorn chart version in `infra/gitops/platform/longhorn/helm-release.yaml`.
+- Keep Talos installer images aligned with the required Longhorn host extensions: `siderolabs/iscsi-tools` and `siderolabs/util-linux-tools`.
 - Move Cilium and other platform upgrades into GitOps after the initial bootstrap workflow is adopted.

@@ -15,15 +15,22 @@ talos_version      = "v1.12"
 # Check the Talos release notes/support matrix before changing.
 kubernetes_version = "v1.35.4"
 
-talos_node_count         = 1
-talos_node_name_prefix   = "jam-talos"
-talos_node_vm_id_start   = 301
-talos_node_cpu_cores     = 4
-talos_node_memory_mb     = 8192
-talos_node_disk_size_gb  = 80
-talos_qemu_agent_enabled = false
-talos_install_disk       = "/dev/sda"
-talos_network_interface  = "eth0"
+talos_node_count           = 1
+talos_node_name_prefix     = "jam-talos"
+talos_node_vm_id_start     = 301
+talos_node_cpu_cores       = 4
+talos_node_memory_mb       = 8192
+talos_node_disk_size_gb    = 40
+longhorn_data_disk_size_gb = 40
+talos_qemu_agent_enabled   = false
+talos_install_disk         = "/dev/sda"
+# Longhorn requires the Talos image to include siderolabs/iscsi-tools and
+# siderolabs/util-linux-tools. Leave this unset when the Proxmox template
+# already includes those extensions; otherwise point at a matching Image
+# Factory installer.
+# talos_installer_image = "factory.talos.dev/installer/<schematic-id>:v1.12.0"
+longhorn_data_disk_selector = "!system_disk"
+talos_network_interface    = "eth0"
 
 talos_node_ipv4_addresses = [
   "192.168.1.50",

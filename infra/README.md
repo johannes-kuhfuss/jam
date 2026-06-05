@@ -24,8 +24,8 @@ The lab environment supports either one converged Talos control-plane node or a 
 5. Run OpenTofu from `opentofu/environments/lab`.
 6. Bootstrap Cilium with `scripts/dev/bootstrap-cilium.sh`.
 7. Bootstrap Flux with `scripts/dev/bootstrap-gitops.sh`.
-8. Run the blackbox smoke test with `scripts/dev/blackbox-lab.sh`.
-9. Hand Cilium ownership to GitOps after the cluster is healthy.
+8. Commit and push GitOps changes to `main` so Flux can reconcile them.
+9. Run the blackbox smoke test with `scripts/dev/blackbox-lab.sh`.
 
 ```sh
 ./scripts/dev/provision-lab.sh
@@ -42,9 +42,11 @@ infra/talos/generated/
 
 The provisioning script also installs the generated kubeconfig to `~/.kube/config` and the generated talosconfig to the default `talosctl` config path, backing up existing default configs first. The installed kubeconfig uses the first Talos node IP during bootstrap; after Cilium and kube-vip are healthy, the Cilium bootstrap script switches it back to the API VIP. After provisioning, `kubectl` and `talosctl` can use the lab cluster without extra config flags.
 
-OpenTofu owns the Proxmox VMs and Talos bootstrap. The Cilium bootstrap script performs the first CNI install because the cluster starts without a CNI and with kube-proxy disabled. The GitOps bootstrap script installs Flux after Cilium is healthy and points it at `infra/gitops/clusters/lab` in the public GitHub repository over HTTPS.
+OpenTofu owns the Proxmox VMs, Talos bootstrap, and host-level Longhorn prerequisites. The Cilium bootstrap script performs the first CNI install because the cluster starts without a CNI and with kube-proxy disabled. The GitOps bootstrap script installs Flux after Cilium is healthy and points it at `infra/gitops/clusters/lab` in the public GitHub repository over HTTPS.
 
-GitOps should own Cilium configuration and upgrades after that initial bootstrap.
+GitOps owns Longhorn and should own Cilium configuration and upgrades after the initial bootstrap.
+
+Flux pulls the public GitHub repository over HTTPS. Local uncommitted changes are invisible to the cluster until they are committed and pushed to `main`.
 
 Until Cilium is installed, Kubernetes nodes may report `NotReady`; that is expected for this bootstrap model.
 

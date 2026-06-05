@@ -19,14 +19,17 @@ export SCHEMATIC_ID=replace-with-image-factory-schematic-id
 
 ## Create The Template
 
-Use Talos Image Factory to create a `nocloud` raw disk image for the pinned Talos version and schematic. The schematic should include the QEMU guest agent extension and a serial console kernel argument for the Proxmox console.
+Use Talos Image Factory to create a `nocloud` raw disk image for the pinned Talos version and schematic. The schematic should include Longhorn's required storage extensions and a serial console kernel argument for the Proxmox console. Include the QEMU guest agent extension too if `talos_qemu_agent_enabled` will be set to `true`.
 
 1. Navigate to the Talos Image Factory
 2. As "Hardware Type" choose "Cloud Server"
 3. Choose the recommended Talos version and update the version number in the EXPORT command (see above)
 4. For "Cloud" choose "Nocloud"
 5. For machine architecture choose "amd64" and leave "SecureBoot" disabled
-6. From the "System Extensions" select the "siderolabs/qemu-guest-agent"
+6. From "System Extensions", select:
+   - `siderolabs/iscsi-tools`
+   - `siderolabs/util-linux-tools`
+   - `siderolabs/qemu-guest-agent` if Proxmox guest agent support is desired
 7. On the "Customization" page, add this extra kernel command line argument: `console=ttyS0,115200`
 8. Note down your schematic image ID and adjust the EXPORT command accordingly
 
@@ -38,8 +41,12 @@ customization:
     - console=ttyS0,115200
   systemExtensions:
     officialExtensions:
+      - siderolabs/iscsi-tools
+      - siderolabs/util-linux-tools
       - siderolabs/qemu-guest-agent
 ```
+
+`siderolabs/iscsi-tools` and `siderolabs/util-linux-tools` are required for Longhorn on Talos. Without them, Longhorn can reconcile from Flux but volume attachment and filesystem operations will fail on the nodes.
 
 ```sh
 cd /var/lib/vz/template/iso
@@ -86,6 +93,8 @@ talos_qemu_agent_enabled = true
 ```
 
 Both sides are required: the Talos image must include and run the guest agent extension, and Proxmox must expose the QEMU guest agent channel to the VM.
+
+If the Talos template already includes the Longhorn extensions, `talos_installer_image` can remain unset in `lab.auto.tfvars`. Set `talos_installer_image` only when the VM template does not already contain those extensions and the install should use a specific Image Factory installer.
 
 ## OpenTofu Token Permissions
 

@@ -48,6 +48,19 @@ network_bridge = "vmbr0"
 vlan_id        = null
 ```
 
+Longhorn requires Talos system extensions for iSCSI and filesystem utilities. Prefer building the Talos template with `siderolabs/iscsi-tools` and `siderolabs/util-linux-tools`. If the template does not include them, use a Talos Image Factory installer and set it explicitly:
+
+```hcl
+talos_installer_image = "factory.talos.dev/installer/<schematic-id>:v1.12.0"
+```
+
+The lab uses a smaller Talos root disk and a dedicated Longhorn data disk by default:
+
+```hcl
+talos_node_disk_size_gb    = 40
+longhorn_data_disk_size_gb = 40
+```
+
 For one Talos node:
 
 ```hcl

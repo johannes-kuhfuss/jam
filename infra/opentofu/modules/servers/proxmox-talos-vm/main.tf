@@ -37,6 +37,17 @@ resource "proxmox_virtual_environment_vm" "this" {
     file_format  = var.disk_file_format
   }
 
+  dynamic "disk" {
+    for_each = var.data_disk_size_gb == null ? [] : [var.data_disk_size_gb]
+
+    content {
+      datastore_id = coalesce(var.data_disk_datastore_id, var.datastore_id)
+      interface    = "scsi1"
+      size         = disk.value
+      file_format  = var.data_disk_file_format
+    }
+  }
+
   network_device {
     bridge      = var.network_bridge
     vlan_id     = var.vlan_id

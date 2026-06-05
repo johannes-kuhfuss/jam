@@ -31,8 +31,23 @@ locals {
           "$patch" = "delete"
         }
       }
-      install = {
-        disk = var.talos_install_disk
+      install = merge(
+        {
+          disk = var.talos_install_disk
+        },
+        var.talos_installer_image == null ? {} : {
+          image = var.talos_installer_image
+        }
+      )
+      kubelet = {
+        extraMounts = [
+          {
+            destination = "/var/mnt/longhorn"
+            type        = "bind"
+            source      = "/var/mnt/longhorn"
+            options     = ["bind", "rshared", "rw"]
+          }
+        ]
       }
       features = {
         kubePrism = {
@@ -141,6 +156,23 @@ locals {
     }
   }
 
+  longhorn_user_volume_config = {
+    apiVersion = "v1alpha1"
+    kind       = "UserVolumeConfig"
+    name       = "longhorn"
+    provisioning = {
+      diskSelector = {
+        match = var.longhorn_data_disk_selector
+      }
+      grow    = false
+      maxSize = "${var.longhorn_data_disk_size_gb}GiB"
+      minSize = "${var.longhorn_data_disk_size_gb}GiB"
+    }
+    filesystem = {
+      type = "xfs"
+    }
+  }
+
 }
 
 resource "terraform_data" "talos_node_ipv4_address_count_validation" {
@@ -190,6 +222,7 @@ module "talos_nodes" {
   memory_mb         = var.talos_node_memory_mb
   datastore_id      = var.datastore_id
   disk_size_gb      = var.talos_node_disk_size_gb
+  data_disk_size_gb = var.longhorn_data_disk_size_gb
   network_bridge    = var.network_bridge
   vlan_id           = var.vlan_id
   mac_address       = each.value.mac_address
@@ -219,6 +252,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
   config_patches = [
     yamlencode(local.node_common_patch),
     yamlencode(local.kube_vip_patch),
+    yamlencode(local.longhorn_user_volume_config),
     yamlencode({
       machine = {
         network = {
