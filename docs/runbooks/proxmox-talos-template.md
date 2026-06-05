@@ -78,7 +78,7 @@ qm importdisk "$TEMPLATE_ID" \
   "$STORAGE"
 
 qm set "$TEMPLATE_ID" \
-  --scsi0 "$STORAGE:vm-$TEMPLATE_ID-disk-1,cache=none,discard=on" \
+  --scsi0 "$STORAGE:vm-$TEMPLATE_ID-disk-0,cache=none,discard=on" \
   --boot order=scsi0
 
 qm template "$TEMPLATE_ID"
