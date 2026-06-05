@@ -164,9 +164,8 @@ locals {
       diskSelector = {
         match = var.longhorn_data_disk_selector
       }
-      grow    = false
-      maxSize = "${var.longhorn_data_disk_size_gb}GiB"
-      minSize = "${var.longhorn_data_disk_size_gb}GiB"
+      grow    = true
+      minSize = "1GiB"
     }
     filesystem = {
       type = "xfs"

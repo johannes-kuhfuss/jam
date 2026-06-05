@@ -13,6 +13,8 @@ OpenTofu and Talos own the host prerequisites:
 - Longhorn stores replicas at `/var/mnt/longhorn`
 - kubelet receives `/var/mnt/longhorn` as a bind mount
 
+The Talos user volume uses `grow: true` with a small `minSize` and no `maxSize`, so it consumes the available space on the matched dedicated data disk. Do not set `minSize` and `maxSize` equal to the Proxmox disk size: Proxmox `GB` sizing and Talos `GiB` reporting can differ enough for Talos to reject the disk as too small.
+
 The Talos image must include the `siderolabs/iscsi-tools` and `siderolabs/util-linux-tools` system extensions. Prefer baking them into the Proxmox Talos template through Talos Image Factory. If the template does not include them, use a matching Talos Image Factory installer image and set `talos_installer_image` in `lab.auto.tfvars`.
 
 The lab defaults to single-node development:

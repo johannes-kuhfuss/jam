@@ -5,7 +5,7 @@ Longhorn provides the default `StorageClass` for the lab cluster. Flux installs 
 Host prerequisites are managed outside Flux:
 
 - each Talos VM gets a dedicated Proxmox data disk
-- Talos mounts that disk as a `UserVolumeConfig` named `longhorn`
+- Talos mounts that disk as a growing `UserVolumeConfig` named `longhorn`
 - kubelet receives `/var/mnt/longhorn` as an extra bind mount
 - the Talos installer image must include `siderolabs/iscsi-tools` and `siderolabs/util-linux-tools`
 
