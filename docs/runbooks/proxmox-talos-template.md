@@ -25,7 +25,7 @@ Use Talos Image Factory to create a `nocloud` raw disk image for the pinned Talo
 2. As "Hardware Type" choose "Cloud Server"
 3. Choose the recommended Talos version and update the version number in the EXPORT command (see above)
 4. For "Cloud" choose "Nocloud"
-5. For machine architecture choose "amd64" and leave "SecureBoot" disabled
+5. For machine architecture choose "amd64" and enable "SecureBoot"
 6. From "System Extensions", select:
    - `siderolabs/iscsi-tools`
    - `siderolabs/util-linux-tools`
@@ -71,7 +71,7 @@ qm create "$TEMPLATE_ID" \
   --agent enabled=0
 
 qm set "$TEMPLATE_ID" \
-  --efidisk0 "$STORAGE:0,efitype=4m,pre-enrolled-keys=0"
+  --efidisk0 "$STORAGE:0,efitype=4m,pre-enrolled-keys=1"
 
 qm importdisk "$TEMPLATE_ID" \
   "talos-${TALOS_VERSION}-${SCHEMATIC_ID}-nocloud-amd64.raw" \
@@ -84,7 +84,9 @@ qm set "$TEMPLATE_ID" \
 qm template "$TEMPLATE_ID"
 ```
 
-The template follows the Talos Proxmox baseline: OVMF UEFI firmware, q35 machine type, VirtIO SCSI controller, raw disk, no memory ballooning, virtio networking, 4 MiB EFI disk, and a socket serial console. The root disk uses `cache=none`, which is the Talos-documented alternative to write-through for clustered environments, and `discard=on` for TRIM support on compatible storage.
+The template follows the Talos Proxmox baseline: OVMF UEFI firmware, q35 machine type, SecureBoot with pre-enrolled EFI keys, VirtIO SCSI controller, raw disk, no memory ballooning, virtio networking, 4 MiB EFI disk, and a socket serial console. The root disk uses `cache=none`, which is the Talos-documented alternative to write-through for clustered environments, and `discard=on` for TRIM support on compatible storage.
+
+SecureBoot requires the Image Factory download to be generated with SecureBoot enabled. If the Proxmox EFI disk uses pre-enrolled keys but the Talos image is not SecureBoot-capable, the VM will not boot.
 
 The Proxmox `--serial0 socket` and `--vga serial0` settings expose the serial device to the VM console. The Image Factory `extraKernelArgs` setting makes Talos write kernel and console output to that serial device.
 

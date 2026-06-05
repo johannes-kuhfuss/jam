@@ -179,8 +179,8 @@ variable "efi_disk_type" {
 
 variable "efi_disk_pre_enrolled_keys" {
   type        = bool
-  description = "Use EFI pre-enrolled keys. Keep false unless Secure Boot is configured deliberately."
-  default     = false
+  description = "Use EFI pre-enrolled keys for SecureBoot-capable Talos images."
+  default     = true
 }
 
 variable "network_bridge" {
