@@ -54,6 +54,34 @@ variable "cpu_type" {
   default     = "host"
 }
 
+variable "bios" {
+  type        = string
+  description = "Proxmox BIOS implementation."
+  default     = "ovmf"
+
+  validation {
+    condition     = contains(["ovmf", "seabios"], var.bios)
+    error_message = "bios must be ovmf or seabios."
+  }
+}
+
+variable "machine" {
+  type        = string
+  description = "Proxmox machine type."
+  default     = "q35"
+}
+
+variable "scsi_hardware" {
+  type        = string
+  description = "Proxmox SCSI controller type."
+  default     = "virtio-scsi-pci"
+
+  validation {
+    condition     = var.scsi_hardware != "virtio-scsi-single"
+    error_message = "virtio-scsi-single is not supported for Talos because it can cause bootstrap or disk discovery failures."
+  }
+}
+
 variable "memory_mb" {
   type        = number
   description = "Memory assigned to the VM in MiB."
@@ -77,6 +105,24 @@ variable "disk_file_format" {
   default     = "raw"
 }
 
+variable "disk_cache" {
+  type        = string
+  description = "Root disk cache mode. Talos recommends writethrough as a safe default or none for clustered environments."
+  default     = "none"
+}
+
+variable "disk_discard" {
+  type        = string
+  description = "Root disk discard/TRIM mode."
+  default     = "on"
+}
+
+variable "disk_ssd" {
+  type        = bool
+  description = "Enable SSD emulation for the root disk."
+  default     = false
+}
+
 variable "data_disk_size_gb" {
   type        = number
   description = "Optional additional data disk size in GiB."
@@ -93,6 +139,48 @@ variable "data_disk_file_format" {
   type        = string
   description = "Additional data disk file format, for example raw or qcow2."
   default     = "raw"
+}
+
+variable "data_disk_cache" {
+  type        = string
+  description = "Additional data disk cache mode."
+  default     = "none"
+}
+
+variable "data_disk_discard" {
+  type        = string
+  description = "Additional data disk discard/TRIM mode."
+  default     = "on"
+}
+
+variable "data_disk_ssd" {
+  type        = bool
+  description = "Enable SSD emulation for the additional data disk."
+  default     = false
+}
+
+variable "efi_disk_datastore_id" {
+  type        = string
+  description = "Optional datastore for the EFI disk. Defaults to datastore_id."
+  default     = null
+}
+
+variable "efi_disk_file_format" {
+  type        = string
+  description = "EFI disk file format."
+  default     = "raw"
+}
+
+variable "efi_disk_type" {
+  type        = string
+  description = "EFI disk type."
+  default     = "4m"
+}
+
+variable "efi_disk_pre_enrolled_keys" {
+  type        = bool
+  description = "Use EFI pre-enrolled keys. Keep false unless Secure Boot is configured deliberately."
+  default     = false
 }
 
 variable "network_bridge" {

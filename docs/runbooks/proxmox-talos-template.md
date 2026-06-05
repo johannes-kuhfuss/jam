@@ -59,24 +59,32 @@ xz -d "talos-${TALOS_VERSION}-${SCHEMATIC_ID}-nocloud-amd64.raw.xz"
 qm create "$TEMPLATE_ID" \
   --name "$TEMPLATE_NAME" \
   --memory 8192 \
+  --balloon 0 \
   --cores 4 \
   --net0 virtio,bridge="$BRIDGE" \
+  --bios ovmf \
+  --machine q35 \
   --scsihw virtio-scsi-pci \
   --ostype l26 \
   --serial0 socket \
   --vga serial0 \
   --agent enabled=0
 
+qm set "$TEMPLATE_ID" \
+  --efidisk0 "$STORAGE:0,efitype=4m,pre-enrolled-keys=0"
+
 qm importdisk "$TEMPLATE_ID" \
   "talos-${TALOS_VERSION}-${SCHEMATIC_ID}-nocloud-amd64.raw" \
   "$STORAGE"
 
 qm set "$TEMPLATE_ID" \
-  --scsi0 "$STORAGE:vm-$TEMPLATE_ID-disk-0" \
+  --scsi0 "$STORAGE:vm-$TEMPLATE_ID-disk-0,cache=none,discard=on" \
   --boot order=scsi0
 
 qm template "$TEMPLATE_ID"
 ```
+
+The template follows the Talos Proxmox baseline: OVMF UEFI firmware, q35 machine type, VirtIO SCSI controller, raw disk, no memory ballooning, virtio networking, 4 MiB EFI disk, and a socket serial console. The root disk uses `cache=none`, which is the Talos-documented alternative to write-through for clustered environments, and `discard=on` for TRIM support on compatible storage.
 
 The Proxmox `--serial0 socket` and `--vga serial0` settings expose the serial device to the VM console. The Image Factory `extraKernelArgs` setting makes Talos write kernel and console output to that serial device.
 
