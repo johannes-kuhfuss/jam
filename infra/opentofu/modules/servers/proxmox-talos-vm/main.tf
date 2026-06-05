@@ -35,17 +35,6 @@ resource "proxmox_virtual_environment_vm" "this" {
     floating  = 0
   }
 
-  dynamic "efi_disk" {
-    for_each = var.bios == "ovmf" ? [1] : []
-
-    content {
-      datastore_id      = coalesce(var.efi_disk_datastore_id, var.datastore_id)
-      file_format       = var.efi_disk_file_format
-      type              = var.efi_disk_type
-      pre_enrolled_keys = var.efi_disk_pre_enrolled_keys
-    }
-  }
-
   disk {
     datastore_id = var.datastore_id
     interface    = "scsi0"

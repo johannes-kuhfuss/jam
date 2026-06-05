@@ -57,7 +57,7 @@ variable "cpu_type" {
 variable "bios" {
   type        = string
   description = "Proxmox BIOS implementation."
-  default     = "ovmf"
+  default     = "seabios"
 
   validation {
     condition     = contains(["ovmf", "seabios"], var.bios)
@@ -157,30 +157,6 @@ variable "data_disk_ssd" {
   type        = bool
   description = "Enable SSD emulation for the additional data disk."
   default     = false
-}
-
-variable "efi_disk_datastore_id" {
-  type        = string
-  description = "Optional datastore for the EFI disk. Defaults to datastore_id."
-  default     = null
-}
-
-variable "efi_disk_file_format" {
-  type        = string
-  description = "EFI disk file format."
-  default     = "raw"
-}
-
-variable "efi_disk_type" {
-  type        = string
-  description = "EFI disk type."
-  default     = "4m"
-}
-
-variable "efi_disk_pre_enrolled_keys" {
-  type        = bool
-  description = "Use EFI pre-enrolled keys for SecureBoot-capable Talos images."
-  default     = true
 }
 
 variable "network_bridge" {
