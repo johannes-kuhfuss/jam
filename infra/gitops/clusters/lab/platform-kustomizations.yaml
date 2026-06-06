@@ -1,0 +1,126 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jam-longhorn
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./infra/gitops/platform/longhorn
+  prune: true
+  timeout: 15m
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: jam
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jam-istio-base
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./infra/gitops/platform/mesh/istio/base
+  prune: true
+  timeout: 10m
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: jam
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jam-istio-control-plane
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: jam-istio-base
+  interval: 10m
+  path: ./infra/gitops/platform/mesh/istio/control-plane
+  prune: true
+  timeout: 10m
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: jam
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jam-istio-cni
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: jam-istio-control-plane
+  interval: 10m
+  path: ./infra/gitops/platform/mesh/istio/cni
+  prune: true
+  timeout: 10m
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: jam
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jam-istio-ztunnel
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: jam-istio-cni
+  interval: 10m
+  path: ./infra/gitops/platform/mesh/istio/ztunnel
+  prune: true
+  timeout: 10m
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: jam
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jam-envoy-gateway
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./infra/gitops/platform/gateway/envoy-gateway/install
+  prune: true
+  timeout: 10m
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: jam
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jam-envoy-gateway-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: jam-envoy-gateway
+  interval: 10m
+  path: ./infra/gitops/platform/gateway/envoy-gateway/config
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: jam
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jam-zitadel
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: jam-longhorn
+    - name: jam-envoy-gateway-config
+  interval: 10m
+  path: ./infra/gitops/platform/auth/zitadel
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: jam

@@ -1,0 +1,17 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: oidc-browser-auth
+  namespace: envoy-gateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public-api
+  oidc:
+    provider:
+      issuer: https://auth.jam.example
+    clientID: jam-web
+    clientSecret:
+      name: envoy-oidc-client
+    redirectURL: https://api.jam.example/oauth2/callback
