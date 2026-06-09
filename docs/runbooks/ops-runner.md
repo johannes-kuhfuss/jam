@@ -9,7 +9,7 @@ Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium 
 - `kubectl`
 - `helm`
 - `flux`
-- `age-keygen`
+- `age` tooling, including `age-keygen`
 - `sops`
 
 Recommended tools for later cluster add-ons:

@@ -106,7 +106,7 @@ spec:
   interval: 10m
   path: ./infra/gitops/platform/mesh/istio/cni
   prune: true
-  timeout: 10m
+  timeout: 20m
   wait: true
   sourceRef:
     kind: GitRepository
