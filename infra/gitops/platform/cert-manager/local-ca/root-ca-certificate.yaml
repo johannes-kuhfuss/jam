@@ -1,0 +1,27 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: jam-local-root-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: jam local root ca
+  secretName: jam-local-root-ca
+  duration: 87600h
+  renewBefore: 720h
+  subject:
+    organizations:
+      - jam
+    organizationalUnits:
+      - platform
+    countries:
+      - DE
+    localities:
+      - Berlin
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: jam-selfsigned
+    kind: ClusterIssuer
+    group: cert-manager.io

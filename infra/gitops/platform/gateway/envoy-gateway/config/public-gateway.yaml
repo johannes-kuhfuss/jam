@@ -7,9 +7,21 @@ spec:
   gatewayClassName: envoy
   listeners:
     - name: http
-      hostname: "*.jam.example"
+      hostname: "*.mam.jku.internal"
       port: 80
       protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      hostname: "*.mam.jku.internal"
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: mam-jku-internal-wildcard-tls
       allowedRoutes:
         namespaces:
           from: All

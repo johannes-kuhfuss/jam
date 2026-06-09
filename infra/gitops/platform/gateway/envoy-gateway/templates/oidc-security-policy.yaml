@@ -10,8 +10,8 @@ spec:
       name: public-api
   oidc:
     provider:
-      issuer: https://auth.jam.example
+      issuer: https://auth.mam.jku.internal
     clientID: jam-web
     clientSecret:
       name: envoy-oidc-client
-    redirectURL: https://api.jam.example/oauth2/callback
+    redirectURL: https://api.mam.jku.internal/oauth2/callback

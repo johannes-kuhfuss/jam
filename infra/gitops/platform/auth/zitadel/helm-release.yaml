@@ -26,7 +26,7 @@ spec:
     zitadel:
       masterkeySecretName: zitadel-masterkey
       configmapConfig:
-        ExternalDomain: auth.jam.example
+        ExternalDomain: auth.mam.jku.internal
         ExternalPort: 443
         ExternalSecure: true
         TLS:
@@ -35,7 +35,7 @@ spec:
           Org:
             Human:
               UserName: admin
-              Email: admin@jam.example
+              Email: admin@mam.jku.internal
               Password: ReplaceBeforeUnsuspend123!
               PasswordChangeRequired: true
     ingress:

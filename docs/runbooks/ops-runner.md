@@ -9,6 +9,8 @@ Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium 
 - `kubectl`
 - `helm`
 - `flux`
+- `age-keygen`
+- `sops`
 
 Recommended tools for later cluster add-ons:
 
@@ -105,9 +107,10 @@ dns_servers        = ["192.168.1.1"]
 Run the combined lab provisioning script:
 
 ```sh
-chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh scripts/dev/bootstrap-cilium.sh scripts/dev/bootstrap-gitops.sh
+chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh scripts/dev/bootstrap-cilium.sh scripts/dev/bootstrap-gitops.sh scripts/dev/bootstrap-sops-age.sh
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
+./scripts/dev/bootstrap-sops-age.sh
 ./scripts/dev/bootstrap-gitops.sh
 ```
 
@@ -126,6 +129,8 @@ It also installs the generated kubeconfig to the default kubeconfig path:
 The installed kubeconfig initially uses the first Talos node IP as the Kubernetes API server. This keeps `kubectl`, Helm, and the Cilium bootstrap working before kube-vip starts advertising `api_virtual_ip`. After Cilium and kube-vip are healthy, `scripts/dev/bootstrap-cilium.sh` switches the generated and default kubeconfig back to the API VIP.
 
 `scripts/dev/bootstrap-gitops.sh` installs Flux after Cilium is healthy and configures it to reconcile the public repository at `https://github.com/johannes-kuhfuss/jam.git` on branch `main`, path `infra/gitops/clusters/lab`. Because the repository is public, the bootstrap uses read-only HTTPS and does not require deploy keys or tokens.
+
+`scripts/dev/bootstrap-sops-age.sh` generates a local age key under `infra/talos/generated/sops-age.agekey` when one does not already exist, installs it into Flux as the `flux-system/sops-age` Secret, and updates `.sops.yaml` with the public age recipient. The private key is ignored by Git through the existing `infra/talos/generated/` ignore rule. Keep an offline backup of this key; encrypted GitOps secrets cannot be decrypted without it.
 
 If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
 
