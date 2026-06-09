@@ -16,3 +16,5 @@ The bootstrap script waits for the Cilium CRDs before applying `l2-lab.yaml`. Th
 - no `SYS_MODULE` capability
 
 `l2-lab.yaml` enables Cilium L2 announcements for lab `LoadBalancer` Services. Adjust the IP pool and interface before using it outside the example `192.168.1.0/24` network.
+
+The Envoy Gateway public address should be reserved from this pool through `infra/gitops/platform/gateway/envoy-gateway/config/public-gateway.yaml`. See `docs/architecture/networking.md` for the lab addressing convention.

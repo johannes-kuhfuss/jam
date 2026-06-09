@@ -8,6 +8,8 @@ The active configuration installs Envoy Gateway and creates a lab `Gateway` name
 - `https` listens on `*.mam.jku.internal`
 - TLS terminates with the cert-manager managed `mam-jku-internal-wildcard-tls` Secret
 
+Set the intended public Gateway IP with `spec.addresses` in `config/public-gateway.yaml`. The chosen IP must be inside the Cilium `CiliumLoadBalancerIPPool` configured in `infra/platform/cilium/l2-lab.yaml`.
+
 Before exposing the MAM beyond the lab:
 
 - point local/manual DNS records at the Envoy Gateway load balancer IP

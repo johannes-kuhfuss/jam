@@ -104,6 +104,14 @@ dns_domain         = "home.arpa"
 dns_servers        = ["192.168.1.1"]
 ```
 
+Before bootstrapping Cilium and GitOps, adjust the lab load balancer addressing:
+
+- set the Cilium `LoadBalancer` IP pool in `infra/platform/cilium/l2-lab.yaml`
+- set the Envoy Gateway `spec.addresses` IP in `infra/gitops/platform/gateway/envoy-gateway/config/public-gateway.yaml`
+- point wildcard DNS for `*.mam.jku.internal` at that Envoy Gateway IP
+
+The Envoy Gateway IP must be a free address inside the Cilium pool. See `docs/architecture/networking.md` for an example.
+
 Run the combined lab provisioning script:
 
 ```sh
