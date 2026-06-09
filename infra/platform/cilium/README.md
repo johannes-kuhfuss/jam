@@ -11,6 +11,7 @@ The bootstrap script waits for the Cilium CRDs before applying `l2-lab.yaml`. Th
 - `kubeProxyReplacement: true`
 - `k8sServiceHost: localhost`
 - `k8sServicePort: 7445`
+- `cni.exclusive: false` so Istio CNI can chain with Cilium for ambient mesh
 - Talos-compatible cgroup settings
 - no `SYS_MODULE` capability
 
