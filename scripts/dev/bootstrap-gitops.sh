@@ -94,7 +94,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: $FLUX_SOURCE_NAME
-  wait: true
+  wait: false
   timeout: $BOOTSTRAP_TIMEOUT
 EOF
 

@@ -149,7 +149,7 @@ The installed kubeconfig initially uses the first Talos node IP as the Kubernete
 
 `scripts/dev/prepare-zitadel.sh` writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, updates the first-instance admin values, and unsuspends the ZITADEL HelmRelease. The lab deploys PostgreSQL as a separate HelmRelease that ZITADEL depends on, so the database service exists before the ZITADEL initialization hook runs. Encrypt the generated Secret with SOPS before committing it.
 
-`scripts/dev/bootstrap-gitops.sh` installs Flux after Cilium is healthy and configures it to reconcile the public repository at `https://github.com/johannes-kuhfuss/jam.git` on branch `main`, path `infra/gitops/clusters/lab`. Because the repository is public, the bootstrap uses read-only HTTPS and does not require deploy keys or tokens.
+`scripts/dev/bootstrap-gitops.sh` installs Flux after Cilium is healthy and configures it to reconcile the public repository at `https://github.com/johannes-kuhfuss/jam.git` on branch `main`, path `infra/gitops/clusters/lab`. Because the repository is public, the bootstrap uses read-only HTTPS and does not require deploy keys or tokens. The root `jam-lab` Kustomization only applies child platform Kustomizations; readiness for the platform components is checked by `scripts/dev/blackbox-lab.sh`.
 
 If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
 
