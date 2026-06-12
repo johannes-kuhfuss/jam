@@ -59,6 +59,22 @@ wait_helmrelease() {
     --timeout="$SMOKE_TIMEOUT"
 }
 
+check_zitadel() {
+  suspend_state=$(kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get helmrelease zitadel -o jsonpath='{.spec.suspend}' 2>/dev/null || true)
+
+  if [ "$suspend_state" = "true" ]; then
+    echo "ZITADEL HelmRelease is still suspended." >&2
+    echo "Run scripts/dev/prepare-zitadel.sh, encrypt the generated Secret, commit and push the GitOps changes, then rerun GitOps reconciliation." >&2
+    return 1
+  fi
+
+  wait_helmrelease zitadel zitadel
+  kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get secret zitadel-masterkey >/dev/null
+  kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get service zitadel >/dev/null
+  kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get service zitadel-login >/dev/null
+  kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get httproute zitadel >/dev/null
+}
+
 require_file "$KUBECONFIG_PATH" "kubeconfig"
 require_file "$TALOSCONFIG_PATH" "talosconfig"
 require_command kubectl
@@ -132,9 +148,8 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status deploymen
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status daemonset/istio-cni-node --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status daemonset/ztunnel --timeout="$SMOKE_TIMEOUT"
 
-print_step "Checking suspended ZITADEL scaffold"
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get helmrelease zitadel >/dev/null
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get helmrelease zitadel -o jsonpath='{.spec.suspend}' | grep -q '^true$'
+print_step "Checking ZITADEL deployment"
+check_zitadel
 
 print_step "Checking Longhorn rollout and default StorageClass"
 wait_helmrelease longhorn-system longhorn
