@@ -128,3 +128,4 @@ if [ "$api_endpoint" != "$bootstrap_api_endpoint" ]; then
 fi
 
 printf '%s\n' "Cilium bootstrap complete. GitOps can now adopt infra/platform/cilium."
+printf '%s\n' "Next: ./scripts/dev/bootstrap-sops-age.sh"

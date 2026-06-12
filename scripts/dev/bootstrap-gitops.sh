@@ -104,3 +104,4 @@ flux get sources git --namespace "$FLUX_NAMESPACE"
 flux get kustomizations --namespace "$FLUX_NAMESPACE"
 
 printf '%s\n' "Flux bootstrap complete. GitOps is reconciling $FLUX_REPO_URL#$FLUX_REPO_BRANCH:$FLUX_CLUSTER_PATH."
+printf '%s\n' "Next: ./scripts/dev/blackbox-lab.sh"

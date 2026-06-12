@@ -42,6 +42,23 @@ print_step() {
   printf '\n==> %s\n' "$1"
 }
 
+wait_flux_kustomization() {
+  name="$1"
+
+  kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system wait \
+    --for=condition=Ready "kustomization.kustomize.toolkit.fluxcd.io/$name" \
+    --timeout="$SMOKE_TIMEOUT"
+}
+
+wait_helmrelease() {
+  namespace="$1"
+  name="$2"
+
+  kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$namespace" wait \
+    --for=condition=Ready "helmrelease.helm.toolkit.fluxcd.io/$name" \
+    --timeout="$SMOKE_TIMEOUT"
+}
+
 require_file "$KUBECONFIG_PATH" "kubeconfig"
 require_file "$TALOSCONFIG_PATH" "talosconfig"
 require_command kubectl
@@ -71,9 +88,56 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment
 kubectl --kubeconfig "$KUBECONFIG_PATH" get crd gitrepositories.source.toolkit.fluxcd.io kustomizations.kustomize.toolkit.fluxcd.io >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get gitrepositories.source.toolkit.fluxcd.io jam >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get kustomizations.kustomize.toolkit.fluxcd.io jam-lab >/dev/null
+wait_flux_kustomization jam-lab
+wait_flux_kustomization jam-secrets-lab
+wait_flux_kustomization jam-longhorn
+wait_flux_kustomization jam-cert-manager
+wait_flux_kustomization jam-local-ca
+wait_flux_kustomization jam-istio-base
+wait_flux_kustomization jam-istio-control-plane
+wait_flux_kustomization jam-istio-cni
+wait_flux_kustomization jam-istio-ztunnel
+wait_flux_kustomization jam-envoy-gateway
+wait_flux_kustomization jam-envoy-gateway-config
+wait_flux_kustomization jam-zitadel
+
+print_step "Checking SOPS age bootstrap"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get secret sops-age >/dev/null
+
+print_step "Checking cert-manager and local certificates"
+wait_helmrelease cert-manager cert-manager
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n cert-manager rollout status deployment/cert-manager --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n cert-manager rollout status deployment/cert-manager-cainjector --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n cert-manager rollout status deployment/cert-manager-webhook --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" get clusterissuer jam-selfsigned jam-local-ca >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n cert-manager wait --for=condition=Ready certificate/jam-local-root-ca --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system wait --for=condition=Ready certificate/mam-jku-internal-wildcard --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system get secret mam-jku-internal-wildcard-tls >/dev/null
+
+print_step "Checking Envoy Gateway"
+wait_helmrelease envoy-gateway-system envoy-gateway
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system rollout status deployment/envoy-gateway --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" get gatewayclass envoy >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system get gateway public-api >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system wait --for=condition=Accepted gateway/public-api --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system wait --for=condition=Programmed gateway/public-api --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system get gateway public-api -o jsonpath='{.status.addresses[0].value}' | grep -q .
+
+print_step "Checking Istio ambient mesh"
+wait_helmrelease istio-system istio-base
+wait_helmrelease istio-system istiod
+wait_helmrelease istio-system istio-cni
+wait_helmrelease istio-system ztunnel
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status deployment/istiod --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status daemonset/istio-cni-node --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status daemonset/ztunnel --timeout="$SMOKE_TIMEOUT"
+
+print_step "Checking suspended ZITADEL scaffold"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get helmrelease zitadel >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get helmrelease zitadel -o jsonpath='{.spec.suspend}' | grep -q '^true$'
 
 print_step "Checking Longhorn rollout and default StorageClass"
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system get helmreleases.helm.toolkit.fluxcd.io longhorn >/dev/null
+wait_helmrelease longhorn-system longhorn
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status deployment/longhorn-driver-deployer --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status deployment/longhorn-ui --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status daemonset/longhorn-manager --timeout="$SMOKE_TIMEOUT"
@@ -85,7 +149,8 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" create namespace "$SMOKE_NAMESPACE" >/de
 kubectl --kubeconfig "$KUBECONFIG_PATH" label namespace "$SMOKE_NAMESPACE" \
   pod-security.kubernetes.io/enforce=restricted \
   pod-security.kubernetes.io/audit=restricted \
-  pod-security.kubernetes.io/warn=restricted >/dev/null
+  pod-security.kubernetes.io/warn=restricted \
+  istio.io/dataplane-mode=ambient >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$SMOKE_NAMESPACE" apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
@@ -153,3 +218,4 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$SMOKE_NAMESPACE" wait --for=jsonpat
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$SMOKE_NAMESPACE" logs pod/smoke-client
 
 print_step "Blackbox lab test passed"
+printf '%s\n' "Next: verify DNS/TLS for *.mam.jku.internal, then add application HTTPRoutes."

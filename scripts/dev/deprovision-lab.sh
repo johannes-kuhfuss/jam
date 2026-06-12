@@ -70,3 +70,4 @@ restore_default_kubeconfig
 restore_default_talosconfig
 
 printf '%s\n' "Lab resources destroyed. Removed generated Talos and Kubernetes client configs."
+printf '%s\n' "Next: ./scripts/dev/provision-lab.sh"
