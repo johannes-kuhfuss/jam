@@ -4,7 +4,7 @@ metadata:
   name: zitadel
   namespace: zitadel
 spec:
-  suspend: true
+  suspend: false
   interval: 30m
   chart:
     spec:
@@ -26,7 +26,7 @@ spec:
     zitadel:
       masterkeySecretName: zitadel-masterkey
       configmapConfig:
-        ExternalDomain: auth.mam.jku.internal
+        ExternalDomain: 'auth.mam.jku.internal'
         ExternalPort: 443
         ExternalSecure: true
         TLS:
@@ -34,9 +34,9 @@ spec:
         FirstInstance:
           Org:
             Human:
-              UserName: admin
-              Email: admin@mam.jku.internal
-              Password: ReplaceBeforeUnsuspend123!
+              UserName: 'admin'
+              Email: 'admin@mam.jku.internal'
+              Password: 'Admin000'
               PasswordChangeRequired: true
     ingress:
       enabled: false
