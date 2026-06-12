@@ -4,4 +4,6 @@ resources:
   - http-route.yaml
   - namespace.yaml
   - helm-repository.yaml
+  - postgresql-helm-repository.yaml
+  - postgresql-helm-release.yaml
   - helm-release.yaml

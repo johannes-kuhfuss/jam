@@ -7,6 +7,9 @@ spec:
   suspend: false
   interval: 30m
   timeout: 15m
+  dependsOn:
+    - name: zitadel-postgresql
+      namespace: zitadel
   chart:
     spec:
       chart: zitadel
@@ -39,6 +42,9 @@ spec:
       capabilities:
         drop:
           - ALL
+    env:
+      - name: ZITADEL_DATABASE_POSTGRES_DSN
+        value: host=zitadel-postgresql port=5432 user=postgres password=zitadel dbname=zitadel sslmode=disable
     zitadel:
       masterkeySecretName: zitadel-masterkey
       configmapConfig:
@@ -60,7 +66,4 @@ spec:
       ingress:
         enabled: false
     postgresql:
-      enabled: true
-      primary:
-        persistence:
-          storageClass: longhorn
+      enabled: false

@@ -239,9 +239,9 @@ external_domain=$(prompt_default "External ZITADEL hostname" "auth.mam.jku.inter
 admin_username=$(prompt_default "First instance admin username" "admin")
 admin_email=$(prompt_required "First instance admin email")
 admin_password=$(prompt_secret "First instance admin password")
-use_bundled_postgresql=$(prompt_yes_no "Use bundled PostgreSQL chart for the lab" "yes")
+use_lab_postgresql=$(prompt_yes_no "Use the lab PostgreSQL HelmRelease" "yes")
 
-if [ "$use_bundled_postgresql" != "yes" ]; then
+if [ "$use_lab_postgresql" != "yes" ]; then
   echo "External PostgreSQL values are not scaffolded in this repository yet." >&2
   echo "Configure the chart manually, then unsuspend the HelmRelease." >&2
   exit 1

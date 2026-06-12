@@ -147,7 +147,7 @@ The installed kubeconfig initially uses the first Talos node IP as the Kubernete
 
 `scripts/dev/bootstrap-sops-age.sh` generates a local age key under `infra/talos/generated/sops-age.agekey` when one does not already exist, installs it into Flux as the `flux-system/sops-age` Secret, and updates `.sops.yaml` with the public age recipient. The private key is ignored by Git through the existing `infra/talos/generated/` ignore rule. Keep an offline backup of this key; encrypted GitOps secrets cannot be decrypted without it.
 
-`scripts/dev/prepare-zitadel.sh` writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, updates the first-instance admin values, and unsuspends the ZITADEL HelmRelease. Encrypt the generated Secret with SOPS before committing it.
+`scripts/dev/prepare-zitadel.sh` writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, updates the first-instance admin values, and unsuspends the ZITADEL HelmRelease. The lab deploys PostgreSQL as a separate HelmRelease that ZITADEL depends on, so the database service exists before the ZITADEL initialization hook runs. Encrypt the generated Secret with SOPS before committing it.
 
 `scripts/dev/bootstrap-gitops.sh` installs Flux after Cilium is healthy and configures it to reconcile the public repository at `https://github.com/johannes-kuhfuss/jam.git` on branch `main`, path `infra/gitops/clusters/lab`. Because the repository is public, the bootstrap uses read-only HTTPS and does not require deploy keys or tokens.
 

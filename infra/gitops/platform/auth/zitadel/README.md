@@ -25,10 +25,10 @@ The script prompts for:
 
 - the external ZITADEL hostname
 - the first instance admin username, email, and password
-- whether to use the bundled PostgreSQL chart for the lab
+- whether to use the lab PostgreSQL HelmRelease
 - the 32-character master key, or permission to generate one
 
-The automated path currently supports the bundled PostgreSQL chart. If you want to use external PostgreSQL, configure the chart values manually before unsuspending the release.
+The automated path currently supports the lab PostgreSQL HelmRelease in this directory. If you want to use an external PostgreSQL service, configure the chart values manually before unsuspending the release.
 
 It then:
 
@@ -55,7 +55,7 @@ If you do not use the helper script, make the same changes manually:
 2. Replace the `masterkey` value with a permanent 32-character random alphanumeric value.
 3. Encrypt the Secret with SOPS and add it to `infra/gitops/secrets/lab/kustomization.yaml`.
 4. Replace the placeholder first-instance admin email and password in `helm-release.yaml`.
-5. Decide whether the bundled PostgreSQL chart is acceptable for the lab. If it is not, configure an external PostgreSQL service before unsuspending the release.
+5. Decide whether the lab PostgreSQL HelmRelease is acceptable. If it is not, configure an external PostgreSQL service before unsuspending the release.
 6. Copy `templates/http-route.yaml` to `http-route.yaml`, update the hostname if needed, and add it to this kustomization.
 7. Change `spec.suspend` in `helm-release.yaml` to `false`.
 8. Commit and push the GitOps changes so Flux can reconcile `jam-zitadel`.
