@@ -112,15 +112,22 @@ Before bootstrapping Cilium and GitOps, adjust the lab load balancer addressing:
 
 The Envoy Gateway IP must be a free address inside the Cilium pool. See `docs/architecture/networking.md` for an example.
 
-Run the combined lab provisioning script:
+Run the lab provisioning sequence:
 
 ```sh
-chmod +x scripts/dev/provision-lab.sh scripts/dev/deprovision-lab.sh scripts/dev/bootstrap-cilium.sh scripts/dev/bootstrap-gitops.sh scripts/dev/bootstrap-sops-age.sh
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
 ./scripts/dev/bootstrap-sops-age.sh
+./scripts/dev/prepare-zitadel.sh
+sops --encrypt --in-place infra/gitops/secrets/lab/platform/zitadel-masterkey.secret.yaml
+git status
+git add .sops.yaml infra/gitops
+git commit -m "Prepare lab GitOps secrets and Zitadel"
+git push
 ./scripts/dev/bootstrap-gitops.sh
 ```
+
+Flux reconciles from the remote Git repository, not from the runner's local working tree. Commit and push the encrypted ZITADEL Secret, the generated HTTPRoute, kustomization updates, and HelmRelease changes before running `scripts/dev/bootstrap-gitops.sh`.
 
 The script runs OpenTofu and stores generated client configs under:
 
@@ -136,9 +143,13 @@ It also installs the generated kubeconfig to the default kubeconfig path:
 
 The installed kubeconfig initially uses the first Talos node IP as the Kubernetes API server. This keeps `kubectl`, Helm, and the Cilium bootstrap working before kube-vip starts advertising `api_virtual_ip`. After Cilium and kube-vip are healthy, `scripts/dev/bootstrap-cilium.sh` switches the generated and default kubeconfig back to the API VIP.
 
-`scripts/dev/bootstrap-gitops.sh` installs Flux after Cilium is healthy and configures it to reconcile the public repository at `https://github.com/johannes-kuhfuss/jam.git` on branch `main`, path `infra/gitops/clusters/lab`. Because the repository is public, the bootstrap uses read-only HTTPS and does not require deploy keys or tokens.
+`scripts/dev/provision-lab.sh` waits for the Kubernetes API to answer before exiting. The default timeout is 300 seconds and can be overridden with `KUBERNETES_API_TIMEOUT`.
 
 `scripts/dev/bootstrap-sops-age.sh` generates a local age key under `infra/talos/generated/sops-age.agekey` when one does not already exist, installs it into Flux as the `flux-system/sops-age` Secret, and updates `.sops.yaml` with the public age recipient. The private key is ignored by Git through the existing `infra/talos/generated/` ignore rule. Keep an offline backup of this key; encrypted GitOps secrets cannot be decrypted without it.
+
+`scripts/dev/prepare-zitadel.sh` writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, updates the first-instance admin values, and unsuspends the ZITADEL HelmRelease. Encrypt the generated Secret with SOPS before committing it.
+
+`scripts/dev/bootstrap-gitops.sh` installs Flux after Cilium is healthy and configures it to reconcile the public repository at `https://github.com/johannes-kuhfuss/jam.git` on branch `main`, path `infra/gitops/clusters/lab`. Because the repository is public, the bootstrap uses read-only HTTPS and does not require deploy keys or tokens.
 
 If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
 

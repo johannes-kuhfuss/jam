@@ -8,6 +8,7 @@ GENERATED_DIR="$REPO_ROOT/infra/talos/generated"
 KUBE_DIR="$HOME/.kube"
 TARGET_KUBECONFIG="$KUBE_DIR/config"
 MANAGED_KUBECONFIG_MARKER="$KUBE_DIR/config.jam-managed"
+KUBERNETES_API_TIMEOUT="${KUBERNETES_API_TIMEOUT:-300}"
 if [ -n "${XDG_CONFIG_HOME:-}" ]; then
   TALOS_DIR="$XDG_CONFIG_HOME/talos"
   TARGET_TALOSCONFIG="$TALOS_DIR/config.yaml"
@@ -16,6 +17,15 @@ else
   TARGET_TALOSCONFIG="$TALOS_DIR/config"
 fi
 MANAGED_TALOSCONFIG_MARKER="$TALOS_DIR/config.jam-managed"
+
+require_command() {
+  command_name="$1"
+
+  command -v "$command_name" >/dev/null 2>&1 || {
+    echo "$command_name is required but was not found in PATH." >&2
+    exit 1
+  }
+}
 
 install_default_kubeconfig() {
   mkdir -p "$KUBE_DIR"
@@ -51,15 +61,33 @@ install_default_talosconfig() {
   printf '%s\n' "$backup_path" > "$MANAGED_TALOSCONFIG_MARKER"
 }
 
+wait_for_kubernetes_api() {
+  elapsed_seconds=0
+
+  printf 'Waiting for Kubernetes API to answer at the bootstrap endpoint'
+  until kubectl --kubeconfig "$GENERATED_DIR/kubeconfig" --request-timeout=5s get --raw=/version >/dev/null 2>&1; do
+    if [ "$elapsed_seconds" -ge "$KUBERNETES_API_TIMEOUT" ]; then
+      printf '\n' >&2
+      echo "Timed out waiting for the Kubernetes API after ${KUBERNETES_API_TIMEOUT}s." >&2
+      echo "Check Talos machine readiness with: talosctl --talosconfig $GENERATED_DIR/talosconfig health" >&2
+      return 1
+    fi
+
+    printf '.'
+    sleep 5
+    elapsed_seconds=$((elapsed_seconds + 5))
+  done
+
+  printf '\n'
+}
+
 if [ ! -f "$OPENTOFU_DIR/lab.auto.tfvars" ]; then
   echo "Missing $OPENTOFU_DIR/lab.auto.tfvars. Copy lab.auto.tfvars.example and fill in your Proxmox/Talos values." >&2
   exit 1
 fi
 
-command -v tofu >/dev/null 2>&1 || {
-  echo "tofu is required but was not found in PATH." >&2
-  exit 1
-}
+require_command tofu
+require_command kubectl
 
 mkdir -p "$GENERATED_DIR"
 
@@ -83,4 +111,8 @@ printf '%s\n' "Generated Talos config: $GENERATED_DIR/talosconfig"
 printf '%s\n' "Generated kubeconfig: $GENERATED_DIR/kubeconfig"
 printf '%s\n' "Installed default kubeconfig: $TARGET_KUBECONFIG"
 printf '%s\n' "Installed default talosconfig: $TARGET_TALOSCONFIG"
+wait_for_kubernetes_api
 printf '%s\n' "Next: ./scripts/dev/bootstrap-cilium.sh"
+printf '%s\n' "Then: ./scripts/dev/bootstrap-sops-age.sh"
+printf '%s\n' "Then: ./scripts/dev/prepare-zitadel.sh"
+printf '%s\n' "Then: encrypt the ZITADEL Secret, commit and push the GitOps changes, and run ./scripts/dev/bootstrap-gitops.sh"

@@ -276,4 +276,5 @@ update_helm_release "$external_domain" "$admin_username" "$admin_email" "$admin_
 printf '%s\n' "Prepared ZITADEL GitOps files."
 printf '%s\n' "Next: encrypt the generated Secret before committing:"
 printf '%s\n' "  sops --encrypt --in-place infra/gitops/secrets/lab/platform/zitadel-masterkey.secret.yaml"
-printf '%s\n' "Then review and commit the changes."
+printf '%s\n' "Then: review, commit, and push the GitOps changes."
+printf '%s\n' "Then: ./scripts/dev/bootstrap-gitops.sh"

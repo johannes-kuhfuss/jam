@@ -129,3 +129,5 @@ fi
 
 printf '%s\n' "Cilium bootstrap complete. GitOps can now adopt infra/platform/cilium."
 printf '%s\n' "Next: ./scripts/dev/bootstrap-sops-age.sh"
+printf '%s\n' "Then: ./scripts/dev/prepare-zitadel.sh"
+printf '%s\n' "Then: encrypt the ZITADEL Secret, commit and push the GitOps changes, and run ./scripts/dev/bootstrap-gitops.sh"

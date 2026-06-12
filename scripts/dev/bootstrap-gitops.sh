@@ -105,3 +105,4 @@ flux get kustomizations --namespace "$FLUX_NAMESPACE"
 
 printf '%s\n' "Flux bootstrap complete. GitOps is reconciling $FLUX_REPO_URL#$FLUX_REPO_BRANCH:$FLUX_CLUSTER_PATH."
 printf '%s\n' "Next: ./scripts/dev/blackbox-lab.sh"
+printf '%s\n' "Then: verify DNS/TLS for *.mam.jku.internal and test https://auth.mam.jku.internal"
