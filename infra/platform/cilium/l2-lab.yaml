@@ -4,7 +4,7 @@ metadata:
   name: lab-pool
 spec:
   blocks:
-    - cidr: 192.168.1.240/28
+    - cidr: 192.168.200.216/30
 ---
 apiVersion: cilium.io/v2alpha1
 kind: CiliumL2AnnouncementPolicy

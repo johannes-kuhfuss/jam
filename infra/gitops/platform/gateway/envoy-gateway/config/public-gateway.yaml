@@ -5,11 +5,9 @@ metadata:
   namespace: envoy-gateway-system
 spec:
   gatewayClassName: envoy
-  # Choose a free IP from the CiliumLoadBalancerIPPool in
-  # infra/platform/cilium/l2-lab.yaml, then uncomment this block.
-  # addresses:
-  #   - type: IPAddress
-  #     value: 192.168.200.240
+   addresses:
+     - type: IPAddress
+       value: 192.168.200.217
   listeners:
     - name: http
       hostname: "*.mam.jku.internal"
