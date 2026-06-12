@@ -58,7 +58,7 @@ spec:
             Human:
               UserName: 'admin'
               Email: 'admin@mam.jku.internal'
-              Password: 'Admin000'
+              Password: 'Admin4Auth$32!'
               PasswordChangeRequired: true
     ingress:
       enabled: false
