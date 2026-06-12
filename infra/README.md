@@ -22,7 +22,7 @@ The lab environment supports either one converged Talos control-plane node or a 
 4. Configure DHCP reservations for the static MAC/IP pairs used for first Talos maintenance contact.
 5. Run OpenTofu from `opentofu/environments/lab`.
 6. Bootstrap Cilium with `scripts/dev/bootstrap-cilium.sh`.
-7. Prepare and encrypt lab secrets with `scripts/dev/bootstrap-sops-age.sh` and `scripts/dev/prepare-zitadel.sh`.
+7. Prepare the local SOPS age key with `scripts/dev/bootstrap-sops-age.sh`.
 8. Deploy platform components with `scripts/dev/deploy-platform.sh`.
 9. Run the blackbox smoke test with `scripts/dev/blackbox-lab.sh`.
 
@@ -30,8 +30,7 @@ The lab environment supports either one converged Talos control-plane node or a 
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
 ./scripts/dev/bootstrap-sops-age.sh
-./scripts/dev/prepare-zitadel.sh
-./scripts/dev/deploy-platform.sh
+ENCRYPT_ZITADEL_SECRET=true ./scripts/dev/deploy-platform.sh --prepare-zitadel
 ./scripts/dev/blackbox-lab.sh
 ```
 

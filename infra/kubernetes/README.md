@@ -19,9 +19,7 @@ The script creates or reuses `infra/talos/generated/sops-age.agekey` and writes 
 For the lab ZITADEL deployment:
 
 ```sh
-scripts/dev/prepare-zitadel.sh
-sops --encrypt --in-place infra/kubernetes/secrets/lab/platform/zitadel-masterkey.secret.yaml
-scripts/dev/deploy-platform.sh
+ENCRYPT_ZITADEL_SECRET=true scripts/dev/deploy-platform.sh --prepare-zitadel
 ```
 
 For other secrets, copy a template or write a Kubernetes Secret manifest under `infra/kubernetes/secrets/lab`, encrypt it with SOPS, and add only the encrypted manifest to the relevant `kustomization.yaml`.

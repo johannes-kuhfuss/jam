@@ -15,10 +15,10 @@ The master key cannot be changed after first initialization without losing acces
 
 ## Preparing The Lab Deployment
 
-Use the helper script to fill the scaffolded files:
+Use the platform deploy script to run the preparation prompts and then deploy:
 
 ```sh
-sh scripts/dev/prepare-zitadel.sh
+ENCRYPT_ZITADEL_SECRET=true sh scripts/dev/deploy-platform.sh --prepare-zitadel
 ```
 
 The script prompts for:
@@ -38,7 +38,7 @@ It then:
 - adds the route to this kustomization
 - replaces the placeholder first-instance values in `infra/helm/values/platform/zitadel.yaml`
 
-After running the script, encrypt the generated Secret before deployment:
+If you run `scripts/dev/prepare-zitadel.sh` directly, encrypt the generated Secret before deployment:
 
 ```sh
 sops --encrypt --in-place infra/kubernetes/secrets/lab/platform/zitadel-masterkey.secret.yaml
@@ -56,7 +56,7 @@ If you do not use the helper script, make the same changes manually:
 4. Replace the placeholder first-instance admin email and password in `infra/helm/values/platform/zitadel.yaml`.
 5. Decide whether the lab PostgreSQL chart is acceptable. If it is not, configure an external PostgreSQL service before deployment.
 6. Copy `templates/http-route.yaml` to `http-route.yaml`, update the hostname if needed, and add it to this kustomization.
-7. Run `scripts/dev/deploy-platform.sh`.
+7. Run `scripts/dev/deploy-platform.sh`, or run `scripts/dev/deploy-platform.sh --prepare-zitadel` to let the deploy script perform the preparation step.
 
 Verify the deployment with:
 

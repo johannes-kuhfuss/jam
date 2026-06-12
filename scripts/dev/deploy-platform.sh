@@ -7,8 +7,46 @@ KUBECONFIG_PATH="${KUBECONFIG:-$REPO_ROOT/infra/talos/generated/kubeconfig}"
 PLATFORM_DIR="$REPO_ROOT/infra/kubernetes/platform"
 SECRETS_DIR="$REPO_ROOT/infra/kubernetes/secrets/lab"
 VALUES_DIR="$REPO_ROOT/infra/helm/values/platform"
+ZITADEL_SECRET_PATH="$SECRETS_DIR/platform/zitadel-masterkey.secret.yaml"
+PREPARE_ZITADEL="${PREPARE_ZITADEL:-auto}"
+ENCRYPT_ZITADEL_SECRET="${ENCRYPT_ZITADEL_SECRET:-false}"
 DEPLOY_TIMEOUT="${DEPLOY_TIMEOUT:-15m}"
 BOOTSTRAP_TIMEOUT="${BOOTSTRAP_TIMEOUT:-300s}"
+
+usage() {
+  cat <<EOF
+Usage: $0 [--prepare-zitadel] [--no-prepare-zitadel]
+
+Options:
+  --prepare-zitadel     Run scripts/dev/prepare-zitadel.sh before deployment.
+  --no-prepare-zitadel  Do not run ZITADEL preparation automatically.
+
+Environment:
+  PREPARE_ZITADEL=true|false|auto
+  ENCRYPT_ZITADEL_SECRET=true|false
+EOF
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --prepare-zitadel)
+      PREPARE_ZITADEL=true
+      ;;
+    --no-prepare-zitadel)
+      PREPARE_ZITADEL=false
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
 
 require_file() {
   path="$1"
@@ -83,10 +121,67 @@ apply_lab_secrets() {
   done
 }
 
+encrypt_zitadel_secret_if_requested() {
+  case "$ENCRYPT_ZITADEL_SECRET" in
+    true|yes|1) ;;
+    false|no|0) return 0 ;;
+    *)
+      echo "ENCRYPT_ZITADEL_SECRET must be true or false." >&2
+      exit 1
+      ;;
+  esac
+
+  require_file "$ZITADEL_SECRET_PATH" "ZITADEL master key Secret"
+
+  if grep -q '^sops:' "$ZITADEL_SECRET_PATH"; then
+    return 0
+  fi
+
+  require_command sops
+  sops --encrypt --in-place "$ZITADEL_SECRET_PATH"
+}
+
+prepare_zitadel_if_needed() {
+  case "$PREPARE_ZITADEL" in
+    true|yes|1)
+      "$SCRIPT_DIR/prepare-zitadel.sh"
+      encrypt_zitadel_secret_if_requested
+      return 0
+      ;;
+    false|no|0)
+      require_file "$ZITADEL_SECRET_PATH" "ZITADEL master key Secret"
+      return 0
+      ;;
+    auto) ;;
+    *)
+      echo "PREPARE_ZITADEL must be true, false, or auto." >&2
+      exit 1
+      ;;
+  esac
+
+  if [ -f "$ZITADEL_SECRET_PATH" ]; then
+    encrypt_zitadel_secret_if_requested
+    return 0
+  fi
+
+  if [ -t 0 ]; then
+    print_step "Preparing ZITADEL configuration"
+    "$SCRIPT_DIR/prepare-zitadel.sh"
+    encrypt_zitadel_secret_if_requested
+    return 0
+  fi
+
+  echo "Missing ZITADEL master key Secret at $ZITADEL_SECRET_PATH." >&2
+  echo "Run $0 --prepare-zitadel interactively, or create the Secret before noninteractive deployment." >&2
+  exit 1
+}
+
 require_file "$KUBECONFIG_PATH" "kubeconfig"
 require_command kubectl
 require_command helm
 export KUBECONFIG="$KUBECONFIG_PATH"
+
+prepare_zitadel_if_needed
 
 print_step "Checking cluster readiness"
 kubectl --kubeconfig "$KUBECONFIG_PATH" wait --for=condition=Ready nodes --all --timeout="$BOOTSTRAP_TIMEOUT"

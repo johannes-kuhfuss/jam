@@ -117,10 +117,8 @@ Run the lab provisioning sequence:
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
 ./scripts/dev/bootstrap-sops-age.sh
-./scripts/dev/prepare-zitadel.sh
-sops --encrypt --in-place infra/kubernetes/secrets/lab/platform/zitadel-masterkey.secret.yaml
 git status
-./scripts/dev/deploy-platform.sh
+ENCRYPT_ZITADEL_SECRET=true ./scripts/dev/deploy-platform.sh --prepare-zitadel
 ```
 
 The deploy script applies the runner's local working tree directly. Review `git status` before deployment so local changes are intentional.
@@ -143,9 +141,9 @@ The installed kubeconfig initially uses the first Talos node IP as the Kubernete
 
 `scripts/dev/bootstrap-sops-age.sh` generates a local age key under `infra/talos/generated/sops-age.agekey` when one does not already exist and updates `.sops.yaml` with the public age recipient. The private key is ignored by Git through the existing `infra/talos/generated/` ignore rule. Keep an offline backup of this key; encrypted lab secrets cannot be decrypted without it.
 
-`scripts/dev/prepare-zitadel.sh` writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, and updates the first-instance admin values in `infra/helm/values/platform/zitadel.yaml`. The lab deploys PostgreSQL as a separate Helm release before ZITADEL, so the database service exists before the ZITADEL initialization hook runs. Encrypt the generated Secret with SOPS before deploying it.
+`scripts/dev/deploy-platform.sh --prepare-zitadel` runs the ZITADEL preparation prompts before deployment. The preparation step writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, and updates the first-instance admin values in `infra/helm/values/platform/zitadel.yaml`. Set `ENCRYPT_ZITADEL_SECRET=true` to encrypt a generated plaintext Secret with SOPS before the script applies it. The lab deploys PostgreSQL as a separate Helm release before ZITADEL, so the database service exists before the ZITADEL initialization hook runs.
 
-`scripts/dev/deploy-platform.sh` installs Helm-managed platform components, decrypts lab secrets locally with SOPS when needed, and applies plain Kubernetes manifests from `infra/kubernetes`. Readiness for the platform components is checked by `scripts/dev/blackbox-lab.sh`.
+`scripts/dev/deploy-platform.sh` installs Helm-managed platform components, decrypts lab secrets locally with SOPS when needed, and applies plain Kubernetes manifests from `infra/kubernetes`. If the ZITADEL master key Secret is missing and the script is running interactively, the default `PREPARE_ZITADEL=auto` behavior runs the preparation prompts. Readiness for the platform components is checked by `scripts/dev/blackbox-lab.sh`.
 
 If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
 
