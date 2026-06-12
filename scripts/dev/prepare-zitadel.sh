@@ -4,14 +4,14 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 
-ZITADEL_DIR="$REPO_ROOT/infra/gitops/platform/auth/zitadel"
-SECRETS_DIR="$REPO_ROOT/infra/gitops/secrets/lab"
+ZITADEL_DIR="$REPO_ROOT/infra/kubernetes/platform/auth/zitadel"
+SECRETS_DIR="$REPO_ROOT/infra/kubernetes/secrets/lab"
 SECRET_PLATFORM_DIR="$SECRETS_DIR/platform"
 SECRET_PATH="$SECRET_PLATFORM_DIR/zitadel-masterkey.secret.yaml"
 SECRET_RESOURCE="platform/zitadel-masterkey.secret.yaml"
 SECRETS_KUSTOMIZATION="$SECRETS_DIR/kustomization.yaml"
 ZITADEL_KUSTOMIZATION="$ZITADEL_DIR/kustomization.yaml"
-HELM_RELEASE="$ZITADEL_DIR/helm-release.yaml"
+ZITADEL_VALUES="$REPO_ROOT/infra/helm/values/platform/zitadel.yaml"
 HTTP_ROUTE_TEMPLATE="$ZITADEL_DIR/templates/http-route.yaml"
 HTTP_ROUTE="$ZITADEL_DIR/http-route.yaml"
 
@@ -133,12 +133,12 @@ ensure_kustomization_resource() {
   mv "$tmp_path" "$file_path"
 }
 
-update_helm_release() {
+update_zitadel_values() {
   external_domain="$1"
   admin_username="$2"
   admin_email="$3"
   admin_password="$4"
-  tmp_path="$HELM_RELEASE.tmp"
+  tmp_path="$ZITADEL_VALUES.tmp"
 
   external_domain_q=$(yaml_single_quote "$external_domain")
   admin_username_q=$(yaml_single_quote "$admin_username")
@@ -151,33 +151,28 @@ update_helm_release() {
     -v admin_email="$admin_email_q" \
     -v admin_password="$admin_password_q" '
       /^  suspend:/ {
-        print "  suspend: false"
         next
       }
-      /^        ExternalDomain:/ {
-        print "        ExternalDomain: '\''" external_domain "'\''"
+      /^    ExternalDomain:/ {
+        print "    ExternalDomain: '\''" external_domain "'\''"
         next
       }
-      /^              UserName:/ {
-        print "              UserName: '\''" admin_username "'\''"
+      /^          UserName:/ {
+        print "          UserName: '\''" admin_username "'\''"
         next
       }
-      /^              Email:/ {
-        print "              Email: '\''" admin_email "'\''"
+      /^          Email:/ {
+        print "          Email: '\''" admin_email "'\''"
         next
       }
-      /^              Password:/ {
-        print "              Password: '\''" admin_password "'\''"
-        next
-      }
-      /^    postgresql:/ {
-        print
+      /^          Password:/ {
+        print "          Password: '\''" admin_password "'\''"
         next
       }
       { print }
-    ' "$HELM_RELEASE" > "$tmp_path"
+    ' "$ZITADEL_VALUES" > "$tmp_path"
 
-  mv "$tmp_path" "$HELM_RELEASE"
+  mv "$tmp_path" "$ZITADEL_VALUES"
 }
 
 update_http_route() {
@@ -230,7 +225,7 @@ stringData:
 EOF
 }
 
-require_file "$HELM_RELEASE" "ZITADEL HelmRelease"
+require_file "$ZITADEL_VALUES" "ZITADEL Helm values"
 require_file "$ZITADEL_KUSTOMIZATION" "ZITADEL kustomization"
 require_file "$SECRETS_KUSTOMIZATION" "lab secrets kustomization"
 require_file "$HTTP_ROUTE_TEMPLATE" "ZITADEL HTTPRoute template"
@@ -239,11 +234,11 @@ external_domain=$(prompt_default "External ZITADEL hostname" "auth.mam.jku.inter
 admin_username=$(prompt_default "First instance admin username" "admin")
 admin_email=$(prompt_required "First instance admin email")
 admin_password=$(prompt_secret "First instance admin password")
-use_lab_postgresql=$(prompt_yes_no "Use the lab PostgreSQL HelmRelease" "yes")
+use_lab_postgresql=$(prompt_yes_no "Use the lab PostgreSQL chart" "yes")
 
 if [ "$use_lab_postgresql" != "yes" ]; then
   echo "External PostgreSQL values are not scaffolded in this repository yet." >&2
-  echo "Configure the chart manually, then unsuspend the HelmRelease." >&2
+  echo "Configure the chart values manually before deployment." >&2
   exit 1
 fi
 
@@ -271,10 +266,9 @@ write_masterkey_secret "$masterkey"
 ensure_kustomization_resource "$SECRETS_KUSTOMIZATION" "$SECRET_RESOURCE"
 update_http_route "$external_domain"
 ensure_kustomization_resource "$ZITADEL_KUSTOMIZATION" "http-route.yaml"
-update_helm_release "$external_domain" "$admin_username" "$admin_email" "$admin_password"
+update_zitadel_values "$external_domain" "$admin_username" "$admin_email" "$admin_password"
 
-printf '%s\n' "Prepared ZITADEL GitOps files."
+printf '%s\n' "Prepared ZITADEL deployment files."
 printf '%s\n' "Next: encrypt the generated Secret before committing:"
-printf '%s\n' "  sops --encrypt --in-place infra/gitops/secrets/lab/platform/zitadel-masterkey.secret.yaml"
-printf '%s\n' "Then: review, commit, and push the GitOps changes."
-printf '%s\n' "Then: ./scripts/dev/bootstrap-gitops.sh"
+printf '%s\n' "  sops --encrypt --in-place infra/kubernetes/secrets/lab/platform/zitadel-masterkey.secret.yaml"
+printf '%s\n' "Then: ./scripts/dev/deploy-platform.sh"

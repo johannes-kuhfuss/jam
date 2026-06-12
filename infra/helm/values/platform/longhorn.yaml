@@ -1,0 +1,9 @@
+defaultSettings:
+  defaultDataPath: /var/mnt/longhorn
+  defaultReplicaCount: 1
+  replicaAutoBalance: best-effort
+persistence:
+  defaultClass: true
+  defaultClassReplicaCount: 1
+  defaultFsType: ext4
+  reclaimPolicy: Retain

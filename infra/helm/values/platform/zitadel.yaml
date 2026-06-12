@@ -1,0 +1,41 @@
+replicaCount: 1
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  readOnlyRootFilesystem: true
+  privileged: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+env:
+  - name: ZITADEL_DATABASE_POSTGRES_DSN
+    value: host=zitadel-postgresql port=5432 user=postgres password=zitadel dbname=zitadel sslmode=disable
+zitadel:
+  masterkeySecretName: zitadel-masterkey
+  configmapConfig:
+    ExternalDomain: 'auth.mam.jku.internal'
+    ExternalPort: 443
+    ExternalSecure: true
+    TLS:
+      Enabled: false
+    FirstInstance:
+      Org:
+        Human:
+          UserName: 'admin'
+          Email: 'admin@mam.jku.internal'
+          Password: 'Admin4Auth32!'
+          PasswordChangeRequired: true
+ingress:
+  enabled: false
+login:
+  ingress:
+    enabled: false
+postgresql:
+  enabled: false

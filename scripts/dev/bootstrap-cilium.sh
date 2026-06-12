@@ -127,7 +127,7 @@ if [ "$api_endpoint" != "$bootstrap_api_endpoint" ]; then
   printf '%s\n' "Switched kubeconfig API endpoint to $api_endpoint"
 fi
 
-printf '%s\n' "Cilium bootstrap complete. GitOps can now adopt infra/platform/cilium."
+printf '%s\n' "Cilium bootstrap complete. Platform deployment can now continue."
 printf '%s\n' "Next: ./scripts/dev/bootstrap-sops-age.sh"
 printf '%s\n' "Then: ./scripts/dev/prepare-zitadel.sh"
-printf '%s\n' "Then: encrypt the ZITADEL Secret, commit and push the GitOps changes, and run ./scripts/dev/bootstrap-gitops.sh"
+printf '%s\n' "Then: encrypt the ZITADEL Secret and run ./scripts/dev/deploy-platform.sh"

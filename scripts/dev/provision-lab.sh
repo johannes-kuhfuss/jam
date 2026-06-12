@@ -115,4 +115,4 @@ wait_for_kubernetes_api
 printf '%s\n' "Next: ./scripts/dev/bootstrap-cilium.sh"
 printf '%s\n' "Then: ./scripts/dev/bootstrap-sops-age.sh"
 printf '%s\n' "Then: ./scripts/dev/prepare-zitadel.sh"
-printf '%s\n' "Then: encrypt the ZITADEL Secret, commit and push the GitOps changes, and run ./scripts/dev/bootstrap-gitops.sh"
+printf '%s\n' "Then: encrypt the ZITADEL Secret and run ./scripts/dev/deploy-platform.sh"

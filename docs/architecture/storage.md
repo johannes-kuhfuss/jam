@@ -4,7 +4,7 @@ This document captures storage decisions for media assets, metadata, backups, an
 
 ## Kubernetes Persistent Storage
 
-Longhorn is the default Kubernetes storage provider for the lab cluster. It is installed by Flux from `infra/gitops/platform/longhorn` after Cilium and Flux are healthy.
+Longhorn is the default Kubernetes storage provider for the lab cluster. It is installed by `scripts/dev/deploy-platform.sh` after Cilium is healthy.
 
 OpenTofu and Talos own the host prerequisites:
 
@@ -24,7 +24,7 @@ The lab defaults to single-node development:
 - Longhorn replica count: 1
 - Longhorn is the default `StorageClass`
 
-For a three-node lab, set the Longhorn replica count to `3` in `infra/gitops/platform/longhorn/helm-release.yaml`.
+For a three-node lab, set the Longhorn replica count to `3` in `infra/helm/values/platform/longhorn.yaml`.
 
 Talos v1.12 requires a minimum 10 GiB system disk and recommends 100 GiB. The lab uses 40 GiB for the root disk because workload data is moved to a separate Longhorn disk.
 

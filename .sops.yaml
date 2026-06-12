@@ -1,4 +1,4 @@
 creation_rules:
-  - path_regex: infra/gitops/secrets/lab/.*\.ya?ml$
+  - path_regex: infra/kubernetes/secrets/lab/.*\.ya?ml$
     encrypted_regex: ^(data|stringData)$
     age: age12lxqhul385qtempx02gj7emy4cep7mesyqlgzjsv4w5xpl5n692s65v4ys

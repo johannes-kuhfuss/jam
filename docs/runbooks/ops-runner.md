@@ -1,6 +1,6 @@
 # Ops Runner
 
-Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium bootstrap, Flux bootstrap, and Kubernetes administration.
+Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium bootstrap, platform deployment, and Kubernetes administration.
 
 ## Required Tools
 
@@ -8,7 +8,6 @@ Use a small Linux machine as the operational runner for OpenTofu, Talos, Cilium 
 - `talosctl`
 - `kubectl`
 - `helm`
-- `flux`
 - `age` tooling, including `age-keygen`
 - `sops`
 
@@ -104,10 +103,10 @@ dns_domain         = "home.arpa"
 dns_servers        = ["192.168.1.1"]
 ```
 
-Before bootstrapping Cilium and GitOps, adjust the lab load balancer addressing:
+Before bootstrapping Cilium and deploying platform components, adjust the lab load balancer addressing:
 
 - set the Cilium `LoadBalancer` IP pool in `infra/platform/cilium/l2-lab.yaml`
-- set the Envoy Gateway `spec.addresses` IP in `infra/gitops/platform/gateway/envoy-gateway/config/public-gateway.yaml`
+- set the Envoy Gateway `spec.addresses` IP in `infra/kubernetes/platform/gateway/envoy-gateway/config/public-gateway.yaml`
 - point wildcard DNS for `*.mam.jku.internal` at that Envoy Gateway IP
 
 The Envoy Gateway IP must be a free address inside the Cilium pool. See `docs/architecture/networking.md` for an example.
@@ -119,15 +118,12 @@ Run the lab provisioning sequence:
 ./scripts/dev/bootstrap-cilium.sh
 ./scripts/dev/bootstrap-sops-age.sh
 ./scripts/dev/prepare-zitadel.sh
-sops --encrypt --in-place infra/gitops/secrets/lab/platform/zitadel-masterkey.secret.yaml
+sops --encrypt --in-place infra/kubernetes/secrets/lab/platform/zitadel-masterkey.secret.yaml
 git status
-git add .sops.yaml infra/gitops
-git commit -m "Prepare lab GitOps secrets and Zitadel"
-git push
-./scripts/dev/bootstrap-gitops.sh
+./scripts/dev/deploy-platform.sh
 ```
 
-Flux reconciles from the remote Git repository, not from the runner's local working tree. Commit and push the encrypted ZITADEL Secret, the generated HTTPRoute, kustomization updates, and HelmRelease changes before running `scripts/dev/bootstrap-gitops.sh`.
+The deploy script applies the runner's local working tree directly. Review `git status` before deployment so local changes are intentional.
 
 The script runs OpenTofu and stores generated client configs under:
 
@@ -145,11 +141,11 @@ The installed kubeconfig initially uses the first Talos node IP as the Kubernete
 
 `scripts/dev/provision-lab.sh` waits for the Kubernetes API to answer before exiting. The default timeout is 300 seconds and can be overridden with `KUBERNETES_API_TIMEOUT`.
 
-`scripts/dev/bootstrap-sops-age.sh` generates a local age key under `infra/talos/generated/sops-age.agekey` when one does not already exist, installs it into Flux as the `flux-system/sops-age` Secret, and updates `.sops.yaml` with the public age recipient. The private key is ignored by Git through the existing `infra/talos/generated/` ignore rule. Keep an offline backup of this key; encrypted GitOps secrets cannot be decrypted without it.
+`scripts/dev/bootstrap-sops-age.sh` generates a local age key under `infra/talos/generated/sops-age.agekey` when one does not already exist and updates `.sops.yaml` with the public age recipient. The private key is ignored by Git through the existing `infra/talos/generated/` ignore rule. Keep an offline backup of this key; encrypted lab secrets cannot be decrypted without it.
 
-`scripts/dev/prepare-zitadel.sh` writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, updates the first-instance admin values, and unsuspends the ZITADEL HelmRelease. The lab deploys PostgreSQL as a separate HelmRelease that ZITADEL depends on, so the database service exists before the ZITADEL initialization hook runs. Encrypt the generated Secret with SOPS before committing it.
+`scripts/dev/prepare-zitadel.sh` writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, and updates the first-instance admin values in `infra/helm/values/platform/zitadel.yaml`. The lab deploys PostgreSQL as a separate Helm release before ZITADEL, so the database service exists before the ZITADEL initialization hook runs. Encrypt the generated Secret with SOPS before deploying it.
 
-`scripts/dev/bootstrap-gitops.sh` installs Flux after Cilium is healthy and configures it to reconcile the public repository at `https://github.com/johannes-kuhfuss/jam.git` on branch `main`, path `infra/gitops/clusters/lab`. Because the repository is public, the bootstrap uses read-only HTTPS and does not require deploy keys or tokens. The root `jam-lab` Kustomization only applies child platform Kustomizations; readiness for the platform components is checked by `scripts/dev/blackbox-lab.sh`.
+`scripts/dev/deploy-platform.sh` installs Helm-managed platform components, decrypts lab secrets locally with SOPS when needed, and applies plain Kubernetes manifests from `infra/kubernetes`. Readiness for the platform components is checked by `scripts/dev/blackbox-lab.sh`.
 
 If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
 

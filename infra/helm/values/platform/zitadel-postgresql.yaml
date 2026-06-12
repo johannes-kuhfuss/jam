@@ -1,0 +1,8 @@
+auth:
+  database: zitadel
+  username: zitadel
+  password: zitadel
+  postgresPassword: zitadel
+primary:
+  persistence:
+    storageClass: longhorn

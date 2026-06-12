@@ -9,7 +9,7 @@ Initial direction:
 - Talos provides the immutable Kubernetes node OS and Kubernetes bootstrap.
 - Cilium is the Kubernetes CNI and replaces kube-proxy.
 - OpenTofu automates Proxmox VM creation and Talos cluster bootstrap.
-- Flux reconciles steady-state cluster configuration after the network is healthy.
+- A local deployment script installs and updates platform components after the network is healthy.
 
 Provisioning model:
 
@@ -18,8 +18,7 @@ Provisioning model:
 - OpenTofu applies Talos machine configs and bootstraps Kubernetes.
 - kube-vip provides the Kubernetes API VIP.
 - Cilium is installed once by a bootstrap script because the cluster starts without a CNI.
-- Flux is installed once after Cilium is healthy, using read-only HTTPS access to the public repository.
-- GitOps takes over steady-state platform and application ownership from `infra/gitops/clusters/lab`.
+- `scripts/dev/deploy-platform.sh` installs Helm-managed platform components and applies Kubernetes manifests from `infra/kubernetes`.
 - Cilium L2 announcements provide lab `LoadBalancer` Service IP advertisement.
 
 Known lab tradeoffs:

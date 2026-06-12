@@ -24,7 +24,7 @@ require_file() {
   description="$2"
 
   if [ ! -f "$path" ]; then
-    echo "Missing $description at $path. Run scripts/dev/provision-lab.sh, scripts/dev/bootstrap-cilium.sh, and scripts/dev/bootstrap-gitops.sh first, or set the matching environment variable." >&2
+    echo "Missing $description at $path. Run scripts/dev/provision-lab.sh, scripts/dev/bootstrap-cilium.sh, and scripts/dev/deploy-platform.sh first, or set the matching environment variable." >&2
     exit 1
   fi
 }
@@ -42,33 +42,15 @@ print_step() {
   printf '\n==> %s\n' "$1"
 }
 
-wait_flux_kustomization() {
-  name="$1"
-
-  kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system wait \
-    --for=condition=Ready "kustomization.kustomize.toolkit.fluxcd.io/$name" \
-    --timeout="$SMOKE_TIMEOUT"
-}
-
-wait_helmrelease() {
+check_helm_release() {
   namespace="$1"
   name="$2"
 
-  kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$namespace" wait \
-    --for=condition=Ready "helmrelease.helm.toolkit.fluxcd.io/$name" \
-    --timeout="$SMOKE_TIMEOUT"
+  helm --kubeconfig "$KUBECONFIG_PATH" --namespace "$namespace" status "$name" >/dev/null
 }
 
 check_zitadel() {
-  suspend_state=$(kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get helmrelease zitadel -o jsonpath='{.spec.suspend}' 2>/dev/null || true)
-
-  if [ "$suspend_state" = "true" ]; then
-    echo "ZITADEL HelmRelease is still suspended." >&2
-    echo "Run scripts/dev/prepare-zitadel.sh, encrypt the generated Secret, commit and push the GitOps changes, then rerun GitOps reconciliation." >&2
-    return 1
-  fi
-
-  wait_helmrelease zitadel zitadel
+  check_helm_release zitadel zitadel
   kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get secret zitadel-masterkey >/dev/null
   kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get service zitadel >/dev/null
   kubectl --kubeconfig "$KUBECONFIG_PATH" -n zitadel get service zitadel-login >/dev/null
@@ -78,6 +60,7 @@ check_zitadel() {
 require_file "$KUBECONFIG_PATH" "kubeconfig"
 require_file "$TALOSCONFIG_PATH" "talosconfig"
 require_command kubectl
+require_command helm
 require_command talosctl
 export KUBECONFIG="$KUBECONFIG_PATH"
 trap cleanup EXIT INT TERM
@@ -96,32 +79,19 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n kube-system rollout status deployment
 kubectl --kubeconfig "$KUBECONFIG_PATH" get crd ciliumloadbalancerippools.cilium.io ciliuml2announcementpolicies.cilium.io >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n kube-system get pods -l k8s-app=cilium -o wide
 
-print_step "Checking Flux rollout and reconciliation resources"
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment/source-controller --timeout="$SMOKE_TIMEOUT"
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment/kustomize-controller --timeout="$SMOKE_TIMEOUT"
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment/helm-controller --timeout="$SMOKE_TIMEOUT"
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system rollout status deployment/notification-controller --timeout="$SMOKE_TIMEOUT"
-kubectl --kubeconfig "$KUBECONFIG_PATH" get crd gitrepositories.source.toolkit.fluxcd.io kustomizations.kustomize.toolkit.fluxcd.io >/dev/null
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get gitrepositories.source.toolkit.fluxcd.io jam >/dev/null
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get kustomizations.kustomize.toolkit.fluxcd.io jam-lab >/dev/null
-wait_flux_kustomization jam-lab
-wait_flux_kustomization jam-secrets-lab
-wait_flux_kustomization jam-longhorn
-wait_flux_kustomization jam-cert-manager
-wait_flux_kustomization jam-local-ca
-wait_flux_kustomization jam-istio-base
-wait_flux_kustomization jam-istio-control-plane
-wait_flux_kustomization jam-istio-cni
-wait_flux_kustomization jam-istio-ztunnel
-wait_flux_kustomization jam-envoy-gateway
-wait_flux_kustomization jam-envoy-gateway-config
-wait_flux_kustomization jam-zitadel
-
-print_step "Checking SOPS age bootstrap"
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n flux-system get secret sops-age >/dev/null
+print_step "Checking Helm releases"
+check_helm_release cert-manager cert-manager
+check_helm_release envoy-gateway-system envoy-gateway
+check_helm_release longhorn-system longhorn
+check_helm_release istio-system istio-base
+check_helm_release istio-system istiod
+check_helm_release istio-system istio-cni
+check_helm_release istio-system ztunnel
+check_helm_release zitadel zitadel-postgresql
+check_helm_release zitadel zitadel
 
 print_step "Checking cert-manager and local certificates"
-wait_helmrelease cert-manager cert-manager
+check_helm_release cert-manager cert-manager
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n cert-manager rollout status deployment/cert-manager --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n cert-manager rollout status deployment/cert-manager-cainjector --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n cert-manager rollout status deployment/cert-manager-webhook --timeout="$SMOKE_TIMEOUT"
@@ -131,7 +101,7 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system wait --for=condi
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system get secret mam-jku-internal-wildcard-tls >/dev/null
 
 print_step "Checking Envoy Gateway"
-wait_helmrelease envoy-gateway-system envoy-gateway
+check_helm_release envoy-gateway-system envoy-gateway
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system rollout status deployment/envoy-gateway --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" get gatewayclass envoy >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system get gateway public-api >/dev/null
@@ -140,10 +110,10 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system wait --for=condi
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system get gateway public-api -o jsonpath='{.status.addresses[0].value}' | grep -q .
 
 print_step "Checking Istio ambient mesh"
-wait_helmrelease istio-system istio-base
-wait_helmrelease istio-system istiod
-wait_helmrelease istio-system istio-cni
-wait_helmrelease istio-system ztunnel
+check_helm_release istio-system istio-base
+check_helm_release istio-system istiod
+check_helm_release istio-system istio-cni
+check_helm_release istio-system ztunnel
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status deployment/istiod --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status daemonset/istio-cni-node --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n istio-system rollout status daemonset/ztunnel --timeout="$SMOKE_TIMEOUT"
@@ -152,7 +122,7 @@ print_step "Checking ZITADEL deployment"
 check_zitadel
 
 print_step "Checking Longhorn rollout and default StorageClass"
-wait_helmrelease longhorn-system longhorn
+check_helm_release longhorn-system longhorn
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status deployment/longhorn-driver-deployer --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status deployment/longhorn-ui --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status daemonset/longhorn-manager --timeout="$SMOKE_TIMEOUT"

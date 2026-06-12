@@ -6,11 +6,11 @@ This document captures network, DNS, ingress, TLS, and load-balancing decisions.
 
 Cilium owns Kubernetes `LoadBalancer` Service IP allocation and L2 advertisement in the lab. kube-vip is only used for the Kubernetes API VIP.
 
-Before bootstrapping GitOps in a new lab, choose:
+Before deploying platform components in a new lab, choose:
 
 - one free IP for the Kubernetes API VIP, configured as `api_virtual_ip` in `infra/opentofu/environments/lab/lab.auto.tfvars`
 - one free IP or a small free range for Cilium `LoadBalancer` Services, configured in `infra/platform/cilium/l2-lab.yaml`
-- one specific IP from that Cilium pool for the public Envoy Gateway, configured in `infra/gitops/platform/gateway/envoy-gateway/config/public-gateway.yaml`
+- one specific IP from that Cilium pool for the public Envoy Gateway, configured in `infra/kubernetes/platform/gateway/envoy-gateway/config/public-gateway.yaml`
 
 The Envoy Gateway IP must be inside the Cilium `CiliumLoadBalancerIPPool`.
 
@@ -28,7 +28,7 @@ spec:
 ```
 
 ```yaml
-# infra/gitops/platform/gateway/envoy-gateway/config/public-gateway.yaml
+# infra/kubernetes/platform/gateway/envoy-gateway/config/public-gateway.yaml
 spec:
   gatewayClassName: envoy
   addresses:

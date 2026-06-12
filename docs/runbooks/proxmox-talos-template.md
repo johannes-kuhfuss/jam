@@ -46,7 +46,7 @@ customization:
       - siderolabs/qemu-guest-agent
 ```
 
-`siderolabs/iscsi-tools` and `siderolabs/util-linux-tools` are required for Longhorn on Talos. Without them, Longhorn can reconcile from Flux but volume attachment and filesystem operations will fail on the nodes.
+`siderolabs/iscsi-tools` and `siderolabs/util-linux-tools` are required for Longhorn on Talos. Without them, Longhorn may install but volume attachment and filesystem operations will fail on the nodes.
 
 ```sh
 cd /var/lib/vz/template/iso
