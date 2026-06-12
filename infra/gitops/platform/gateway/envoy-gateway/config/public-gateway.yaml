@@ -5,9 +5,9 @@ metadata:
   namespace: envoy-gateway-system
 spec:
   gatewayClassName: envoy
-   addresses:
-     - type: IPAddress
-       value: 192.168.200.217
+  addresses:
+    - type: IPAddress
+      value: 192.168.200.217
   listeners:
     - name: http
       hostname: "*.mam.jku.internal"
