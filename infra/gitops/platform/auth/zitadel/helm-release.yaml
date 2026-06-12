@@ -24,6 +24,21 @@ spec:
       retries: 3
   values:
     replicaCount: 1
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      readOnlyRootFilesystem: true
+      privileged: false
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
     zitadel:
       masterkeySecretName: zitadel-masterkey
       configmapConfig:
