@@ -10,10 +10,10 @@ network_bridge = "vmbr0"
 vlan_id        = null
 
 cluster_name       = "jam-lab"
-talos_version      = "v1.12"
+talos_version      = "v1.13.4"
 # Must be supported by the selected Talos version.
 # Check the Talos release notes/support matrix before changing.
-kubernetes_version = "v1.35.4"
+kubernetes_version = "v1.36.1"
 
 talos_node_count           = 1
 talos_node_name_prefix     = "jam-talos"
