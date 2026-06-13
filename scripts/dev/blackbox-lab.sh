@@ -20,6 +20,9 @@ cleanup() {
 }
 
 require_file() {
+  local path
+  local description
+
   path="$1"
   description="$2"
 
@@ -30,6 +33,8 @@ require_file() {
 }
 
 require_command() {
+  local command_name
+
   command_name="$1"
 
   command -v "$command_name" >/dev/null 2>&1 || {
@@ -39,10 +44,17 @@ require_command() {
 }
 
 print_step() {
-  printf '\n==> %s\n' "$1"
+  local message
+
+  message="$1"
+
+  printf '\n==> %s\n' "$message"
 }
 
 check_helm_release() {
+  local namespace
+  local name
+
   namespace="$1"
   name="$2"
 

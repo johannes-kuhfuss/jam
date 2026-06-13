@@ -16,6 +16,9 @@ HTTP_ROUTE_TEMPLATE="$ZITADEL_DIR/templates/http-route.yaml"
 HTTP_ROUTE="$ZITADEL_DIR/http-route.yaml"
 
 require_file() {
+  local path
+  local description
+
   path="$1"
   description="$2"
 
@@ -26,6 +29,10 @@ require_file() {
 }
 
 prompt_default() {
+  local label
+  local default_value
+  local value
+
   label="$1"
   default_value="$2"
   value=""
@@ -39,6 +46,9 @@ prompt_default() {
 }
 
 prompt_required() {
+  local label
+  local value
+
   label="$1"
   value=""
 
@@ -50,6 +60,10 @@ prompt_required() {
 }
 
 prompt_secret() {
+  local label
+  local value
+  local stty_state
+
   label="$1"
   value=""
   stty_state=""
@@ -69,6 +83,10 @@ prompt_secret() {
 }
 
 prompt_yes_no() {
+  local label
+  local default_value
+  local answer
+
   label="$1"
   default_value="$2"
   answer=""
@@ -104,10 +122,18 @@ generate_masterkey() {
 }
 
 yaml_single_quote() {
-  printf "%s" "$1" | sed "s/'/''/g"
+  local value
+
+  value="$1"
+
+  printf "%s" "$value" | sed "s/'/''/g"
 }
 
 ensure_kustomization_resource() {
+  local file_path
+  local resource_path
+  local tmp_path
+
   file_path="$1"
   resource_path="$2"
   tmp_path="$file_path.tmp"
@@ -134,6 +160,16 @@ ensure_kustomization_resource() {
 }
 
 update_zitadel_values() {
+  local external_domain
+  local admin_username
+  local admin_email
+  local admin_password
+  local tmp_path
+  local external_domain_q
+  local admin_username_q
+  local admin_email_q
+  local admin_password_q
+
   external_domain="$1"
   admin_username="$2"
   admin_email="$3"
@@ -176,6 +212,9 @@ update_zitadel_values() {
 }
 
 update_http_route() {
+  local external_domain
+  local tmp_path
+
   external_domain="$1"
   tmp_path="$HTTP_ROUTE.tmp"
 
@@ -201,6 +240,9 @@ update_http_route() {
 }
 
 write_masterkey_secret() {
+  local masterkey
+  local overwrite
+
   masterkey="$1"
 
   mkdir -p "$SECRET_PLATFORM_DIR"

@@ -28,7 +28,9 @@ EOF
 }
 
 while [ "$#" -gt 0 ]; do
-  case "$1" in
+  arg="$1"
+
+  case "$arg" in
     --prepare-zitadel)
       PREPARE_ZITADEL=true
       ;;
@@ -40,7 +42,7 @@ while [ "$#" -gt 0 ]; do
       exit 0
       ;;
     *)
-      echo "Unknown argument: $1" >&2
+      echo "Unknown argument: $arg" >&2
       usage >&2
       exit 1
       ;;
@@ -49,6 +51,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 require_file() {
+  local path
+  local description
+
   path="$1"
   description="$2"
 
@@ -59,6 +64,8 @@ require_file() {
 }
 
 require_command() {
+  local command_name
+
   command_name="$1"
 
   command -v "$command_name" >/dev/null 2>&1 || {
@@ -68,16 +75,28 @@ require_command() {
 }
 
 print_step() {
-  printf '\n==> %s\n' "$1"
+  local message
+
+  message="$1"
+
+  printf '\n==> %s\n' "$message"
 }
 
 apply_kustomization() {
+  local path
+
   path="$1"
 
   kubectl --kubeconfig "$KUBECONFIG_PATH" apply -k "$path"
 }
 
 helm_release() {
+  local namespace
+  local release
+  local chart
+  local version
+  local values_file
+
   namespace="$1"
   release="$2"
   chart="$3"
@@ -101,6 +120,8 @@ helm_release() {
 }
 
 apply_secret_file() {
+  local path
+
   path="$1"
 
   if grep -q '^sops:' "$path"; then
