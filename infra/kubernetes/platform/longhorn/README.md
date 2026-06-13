@@ -14,6 +14,6 @@ The lab values default to a single-node setup:
 - Longhorn data path: `/var/mnt/longhorn`
 - default `StorageClass`: `longhorn`
 - replica count: `1`
-- UI exposure: internal service only
+- UI exposure: `https://longhorn.mam.jku.internal` through the lab Envoy Gateway
 
 For a three-node lab, set both `defaultSettings.defaultReplicaCount` and `persistence.defaultClassReplicaCount` in `infra/helm/values/platform/longhorn.yaml` to `3`.

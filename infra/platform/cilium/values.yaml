@@ -40,7 +40,7 @@ hubble:
   relay:
     enabled: true
   ui:
-    enabled: false
+    enabled: true
 
 l2announcements:
   enabled: true

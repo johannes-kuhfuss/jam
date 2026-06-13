@@ -120,6 +120,8 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system get gateway publ
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system wait --for=condition=Accepted gateway/public-api --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system wait --for=condition=Programmed gateway/public-api --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n envoy-gateway-system get gateway public-api -o jsonpath='{.status.addresses[0].value}' | grep -q .
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n kube-system get service hubble-ui >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n kube-system get httproute hubble-ui >/dev/null
 
 print_step "Checking Istio ambient mesh"
 check_helm_release istio-system istio-base
@@ -138,6 +140,8 @@ check_helm_release longhorn-system longhorn
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status deployment/longhorn-driver-deployer --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status deployment/longhorn-ui --timeout="$SMOKE_TIMEOUT"
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system rollout status daemonset/longhorn-manager --timeout="$SMOKE_TIMEOUT"
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system get service longhorn-frontend >/dev/null
+kubectl --kubeconfig "$KUBECONFIG_PATH" -n longhorn-system get httproute longhorn-ui >/dev/null
 kubectl --kubeconfig "$KUBECONFIG_PATH" get storageclass longhorn -o jsonpath='{.metadata.annotations.storageclass\.kubernetes\.io/is-default-class}' | grep -q '^true$'
 
 print_step "Deploying smoke workload"

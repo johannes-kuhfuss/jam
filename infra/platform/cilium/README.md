@@ -14,7 +14,10 @@ The bootstrap script waits for the Cilium CRDs before applying `l2-lab.yaml`. Th
 - `cni.exclusive: false` so Istio CNI can chain with Cilium for ambient mesh
 - Talos-compatible cgroup settings
 - no `SYS_MODULE` capability
+- Hubble relay and UI enabled
 
 `l2-lab.yaml` enables Cilium L2 announcements for lab `LoadBalancer` Services. Adjust the IP pool and interface before using it outside the example `192.168.1.0/24` network.
 
 The Envoy Gateway public address should be reserved from this pool through `infra/kubernetes/platform/gateway/envoy-gateway/config/public-gateway.yaml`. See `docs/architecture/networking.md` for the lab addressing convention.
+
+The platform deployment exposes Hubble UI through the existing Envoy Gateway at `https://hubble.mam.jku.internal`.

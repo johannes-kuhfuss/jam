@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: longhorn-ui
+  namespace: longhorn-system
+spec:
+  parentRefs:
+    - name: public-api
+      namespace: envoy-gateway-system
+  hostnames:
+    - longhorn.mam.jku.internal
+  rules:
+    - backendRefs:
+        - name: longhorn-frontend
+          port: 80

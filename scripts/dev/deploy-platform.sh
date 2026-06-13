@@ -257,6 +257,7 @@ helm_release istio-system ztunnel istio/ztunnel 1.30.1
 
 print_step "Applying Envoy Gateway configuration"
 apply_kustomization "$PLATFORM_DIR/gateway/envoy-gateway/config"
+apply_kustomization "$PLATFORM_DIR/cilium"
 
 print_step "Preparing ZITADEL namespace and secrets"
 kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/auth/zitadel/namespace.yaml"

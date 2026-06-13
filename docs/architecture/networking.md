@@ -41,3 +41,11 @@ Manual DNS should point the wildcard MAM hostname at the Envoy Gateway IP:
 ```text
 *.mam.jku.internal -> 192.168.200.240
 ```
+
+Current lab hostnames behind that wildcard include:
+
+```text
+auth.mam.jku.internal
+hubble.mam.jku.internal
+longhorn.mam.jku.internal
+```
