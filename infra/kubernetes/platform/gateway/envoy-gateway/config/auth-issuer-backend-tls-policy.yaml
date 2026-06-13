@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: public-auth-issuer
+  namespace: envoy-gateway-system
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: public-api-internal
+  validation:
+    hostname: auth.mam.jku.internal
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: jam-local-root-ca-bundle

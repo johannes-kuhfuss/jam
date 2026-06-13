@@ -15,6 +15,8 @@ The lab platform exposes these operator UIs through this Gateway:
 
 The platform configuration also creates a stable internal service named `public-api-internal` in `envoy-gateway-system`. `scripts/dev/deploy-platform.sh` patches CoreDNS so in-cluster clients resolve `auth.mam.jku.internal` to that stable service name instead of the external L2 load-balancer address. This avoids hairpin routing problems when Envoy Gateway validates OIDC issuers from inside the cluster.
 
+`scripts/dev/deploy-platform.sh` also copies the cert-manager local root CA into `envoy-gateway-system/jam-local-root-ca-bundle`. The `BackendTLSPolicy` for `public-api-internal` uses that bundle so Envoy Gateway can validate the ZITADEL issuer certificate during OIDC discovery.
+
 ## Operator UI Authentication
 
 Hubble UI and Longhorn UI can be protected with route-scoped Envoy Gateway OIDC `SecurityPolicy` resources. The policies are enabled by `scripts/dev/prepare-operator-oidc.sh` after the matching client secrets are written.

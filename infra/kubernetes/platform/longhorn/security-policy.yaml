@@ -11,6 +11,10 @@ spec:
   oidc:
     provider:
       issuer: https://auth.mam.jku.internal
+      backendRefs:
+        - name: public-api-internal
+          namespace: envoy-gateway-system
+          port: 443
     clientID: longhorn-ui
     clientSecret:
       name: longhorn-ui-oidc-client

@@ -167,6 +167,21 @@ apply_operator_ui_secret() {
   apply_secret_file "$secret_path"
 }
 
+apply_operator_ui_auth() {
+  local secret_name
+  local policy_path
+
+  secret_name="$1"
+  policy_path="$2"
+
+  if [ ! -f "$SECRETS_DIR/platform/operator-ui/$secret_name" ]; then
+    return 0
+  fi
+
+  apply_operator_ui_secret "$secret_name"
+  kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$policy_path"
+}
+
 configure_sops_age_key() {
   if [ -n "${SOPS_AGE_KEY_FILE:-}" ] ||
     [ -n "${SOPS_AGE_KEY:-}" ] ||
@@ -265,6 +280,8 @@ helm_release envoy-gateway-system envoy-gateway oci://docker.io/envoyproxy/gatew
 
 print_step "Installing local certificate resources"
 apply_kustomization "$PLATFORM_DIR/cert-manager/local-ca"
+print_step "Configuring auth issuer trust"
+sh "$SCRIPT_DIR/configure-auth-issuer-trust.sh"
 
 print_step "Preparing platform secrets"
 apply_secret_file "$ZITADEL_SECRET_PATH"
@@ -284,10 +301,10 @@ print_step "Applying Envoy Gateway configuration"
 apply_kustomization "$PLATFORM_DIR/gateway/envoy-gateway/config"
 print_step "Configuring cluster DNS for public auth hostname"
 sh "$SCRIPT_DIR/configure-cluster-dns.sh"
-apply_operator_ui_secret hubble-ui-oidc-client.secret.yaml
 apply_kustomization "$PLATFORM_DIR/cilium"
-apply_operator_ui_secret longhorn-ui-oidc-client.secret.yaml
+apply_operator_ui_auth hubble-ui-oidc-client.secret.yaml "$PLATFORM_DIR/cilium/hubble-ui-security-policy.yaml"
 apply_kustomization "$PLATFORM_DIR/longhorn"
+apply_operator_ui_auth longhorn-ui-oidc-client.secret.yaml "$PLATFORM_DIR/longhorn/security-policy.yaml"
 
 print_step "Preparing ZITADEL namespace and secrets"
 kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/auth/zitadel/namespace.yaml"

@@ -50,6 +50,8 @@ auth.mam.jku.internal -> public-api-internal.envoy-gateway-system.svc.cluster.lo
 
 This keeps Envoy Gateway OIDC issuer discovery on the internal service path while preserving the public issuer URL used by browsers and tokens.
 
+Because the lab uses a local cert-manager CA, the deployment also copies the local root CA into `envoy-gateway-system/jam-local-root-ca-bundle`. A `BackendTLSPolicy` attaches that trust bundle to the internal `public-api-internal` service so Envoy Gateway can verify `https://auth.mam.jku.internal` during OIDC discovery.
+
 Current lab hostnames behind that wildcard include:
 
 ```text
