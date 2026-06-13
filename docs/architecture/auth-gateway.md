@@ -48,12 +48,12 @@ Lab operator UIs are exposed through Envoy Gateway and should use route-scoped O
 
 Current operator UI clients:
 
-| UI | Hostname | ZITADEL client ID | Redirect URI |
+| UI | Hostname | Suggested app name | Redirect URI |
 | --- | --- | --- | --- |
 | Hubble UI | `hubble.mam.jku.internal` | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
 | Longhorn UI | `longhorn.mam.jku.internal` | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
 
-The OIDC clients are created manually in ZITADEL for now. Use application type `Web` and authentication method `Code` for both clients. `scripts/dev/prepare-operator-oidc.sh` records their client secrets as SOPS-encrypted Kubernetes Secrets and enables the route-scoped Envoy Gateway `SecurityPolicy` manifests.
+The OIDC clients are created manually in ZITADEL for now. Use application type `Web` and authentication method `Code` for both clients. ZITADEL generates the actual OIDC client IDs; `scripts/dev/prepare-operator-oidc.sh` records those IDs in the route-scoped Envoy Gateway `SecurityPolicy` manifests and stores the client secrets as SOPS-encrypted Kubernetes Secrets.
 
 ## Protocol Constraints
 

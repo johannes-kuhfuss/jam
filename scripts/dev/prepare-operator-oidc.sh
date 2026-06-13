@@ -9,6 +9,8 @@ SECRETS_KUSTOMIZATION="$SECRETS_DIR/kustomization.yaml"
 DEFAULT_SOPS_AGE_KEY_FILE="$REPO_ROOT/infra/talos/generated/sops-age.agekey"
 CILIUM_KUSTOMIZATION="$REPO_ROOT/infra/kubernetes/platform/cilium/kustomization.yaml"
 LONGHORN_KUSTOMIZATION="$REPO_ROOT/infra/kubernetes/platform/longhorn/kustomization.yaml"
+HUBBLE_SECURITY_POLICY="$REPO_ROOT/infra/kubernetes/platform/cilium/hubble-ui-security-policy.yaml"
+LONGHORN_SECURITY_POLICY="$REPO_ROOT/infra/kubernetes/platform/longhorn/security-policy.yaml"
 
 require_command() {
   local command_name
@@ -158,37 +160,65 @@ encrypt_secret() {
   sops --encrypt --in-place "$path"
 }
 
+update_security_policy_client_id() {
+  local path
+  local client_id
+  local client_id_q
+  local tmp_path
+
+  path="$1"
+  client_id="$2"
+  client_id_q=$(yaml_single_quote "$client_id")
+  tmp_path="$path.tmp"
+
+  awk -v client_id="$client_id_q" '
+    /^    clientID:/ {
+      print "    clientID: '\''" client_id "'\''"
+      next
+    }
+    { print }
+  ' "$path" > "$tmp_path"
+
+  mv "$tmp_path" "$path"
+}
+
 prepare_client() {
   local label
   local namespace
   local secret_name
-  local client_id
+  local default_client_id
   local resource_path
+  local security_policy_path
   local secret_path
+  local client_id
   local client_secret
 
   label="$1"
   namespace="$2"
   secret_name="$3"
-  client_id="$4"
+  default_client_id="$4"
   resource_path="$5"
+  security_policy_path="$6"
   secret_path="$OPERATOR_SECRET_DIR/$resource_path"
 
-  printf '%s\n' "$label OIDC client ID: $client_id" >&2
+  client_id=$(prompt_default "$label generated ZITADEL client ID" "$default_client_id")
   client_secret=$(prompt_secret "$label OIDC client secret")
 
   write_oidc_secret "$secret_path" "$namespace" "$secret_name" "$client_id" "$client_secret"
   encrypt_secret "$secret_path"
+  update_security_policy_client_id "$security_policy_path" "$client_id"
   ensure_kustomization_resource "$SECRETS_KUSTOMIZATION" "platform/operator-ui/$resource_path"
 }
 
 require_file "$SECRETS_KUSTOMIZATION" "lab secrets kustomization"
 require_file "$CILIUM_KUSTOMIZATION" "Cilium platform kustomization"
 require_file "$LONGHORN_KUSTOMIZATION" "Longhorn platform kustomization"
+require_file "$HUBBLE_SECURITY_POLICY" "Hubble UI SecurityPolicy"
+require_file "$LONGHORN_SECURITY_POLICY" "Longhorn UI SecurityPolicy"
 mkdir -p "$OPERATOR_SECRET_DIR"
 
-prepare_client "Hubble UI" kube-system hubble-ui-oidc-client hubble-ui hubble-ui-oidc-client.secret.yaml
-prepare_client "Longhorn UI" longhorn-system longhorn-ui-oidc-client longhorn-ui longhorn-ui-oidc-client.secret.yaml
+prepare_client "Hubble UI" kube-system hubble-ui-oidc-client hubble-ui hubble-ui-oidc-client.secret.yaml "$HUBBLE_SECURITY_POLICY"
+prepare_client "Longhorn UI" longhorn-system longhorn-ui-oidc-client longhorn-ui longhorn-ui-oidc-client.secret.yaml "$LONGHORN_SECURITY_POLICY"
 ensure_kustomization_resource "$CILIUM_KUSTOMIZATION" "hubble-ui-security-policy.yaml"
 ensure_kustomization_resource "$LONGHORN_KUSTOMIZATION" "security-policy.yaml"
 

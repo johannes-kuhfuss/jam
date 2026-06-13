@@ -72,12 +72,12 @@ Make sure DNS for the configured hostname points to the Envoy Gateway address.
 
 After ZITADEL is running, create OIDC clients for the operator UIs if you want Envoy Gateway authentication in front of them:
 
-| UI | Client ID | Redirect URI |
+| UI | Suggested app name | Redirect URI |
 | --- | --- | --- |
 | Hubble UI | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
 | Longhorn UI | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
 
-Use application type `Web` and authentication method `Code` for both clients.
+Use application type `Web` and authentication method `Code` for both clients. ZITADEL generates the actual OIDC client IDs; enter those generated IDs when running `scripts/dev/prepare-operator-oidc.sh`.
 
 Then run:
 

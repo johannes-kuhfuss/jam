@@ -125,19 +125,19 @@ The deploy script applies the runner's local working tree directly. Review `git 
 
 After ZITADEL is reachable at `https://auth.mam.jku.internal`, create OIDC applications for the operator UIs:
 
-| UI | Type | Authentication Method | Client ID | Redirect URI |
+| UI | Type | Authentication Method | Suggested app name | Redirect URI |
 | --- | --- | --- | --- | --- |
 | Hubble UI | `Web` | `Code` | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
 | Longhorn UI | `Web` | `Code` | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
 
-Use the generated client secrets from those applications. Then store those secrets and enable the route-scoped Envoy Gateway policies:
+Use the generated client IDs and client secrets from those applications. Then store them and enable the route-scoped Envoy Gateway policies:
 
 ```sh
 sh scripts/dev/prepare-operator-oidc.sh
 ./scripts/dev/deploy-platform.sh
 ```
 
-The preparation script writes SOPS-encrypted Secrets under `infra/kubernetes/secrets/lab/platform/operator-ui/` and adds the Hubble and Longhorn `SecurityPolicy` manifests to their platform kustomizations.
+The preparation script writes SOPS-encrypted Secrets under `infra/kubernetes/secrets/lab/platform/operator-ui/`, writes the generated client IDs into the Hubble and Longhorn `SecurityPolicy` manifests, and adds those policies to their platform kustomizations.
 
 The script runs OpenTofu and stores generated client configs under:
 

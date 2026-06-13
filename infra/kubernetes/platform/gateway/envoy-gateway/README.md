@@ -19,19 +19,19 @@ Hubble UI and Longhorn UI can be protected with route-scoped Envoy Gateway OIDC 
 
 Create these ZITADEL OIDC applications manually:
 
-| UI | Type | Authentication Method | Client ID | Redirect URI |
+| UI | Type | Authentication Method | Suggested app name | Redirect URI |
 | --- | --- | --- | --- | --- |
 | Hubble UI | `Web` | `Code` | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
 | Longhorn UI | `Web` | `Code` | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
 
-Use the generated client secrets from both applications, then run:
+Use the generated client IDs and client secrets from both applications, then run:
 
 ```sh
 sh scripts/dev/prepare-operator-oidc.sh
 ./scripts/dev/deploy-platform.sh
 ```
 
-The preparation script prompts for the two client secrets, writes SOPS-encrypted Kubernetes Secrets, and enables the route-scoped `SecurityPolicy` manifests.
+The preparation script prompts for the generated client IDs and client secrets, writes SOPS-encrypted Kubernetes Secrets, updates the `SecurityPolicy` client IDs, and enables the route-scoped `SecurityPolicy` manifests.
 
 Set the intended public Gateway IP with `spec.addresses` in `config/public-gateway.yaml`. The chosen IP must be inside the Cilium `CiliumLoadBalancerIPPool` configured in `infra/platform/cilium/l2-lab.yaml`.
 
