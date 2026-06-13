@@ -282,6 +282,8 @@ helm_release istio-system ztunnel istio/ztunnel 1.30.1
 
 print_step "Applying Envoy Gateway configuration"
 apply_kustomization "$PLATFORM_DIR/gateway/envoy-gateway/config"
+print_step "Configuring cluster DNS for public auth hostname"
+sh "$SCRIPT_DIR/configure-cluster-dns.sh"
 apply_operator_ui_secret hubble-ui-oidc-client.secret.yaml
 apply_kustomization "$PLATFORM_DIR/cilium"
 apply_operator_ui_secret longhorn-ui-oidc-client.secret.yaml

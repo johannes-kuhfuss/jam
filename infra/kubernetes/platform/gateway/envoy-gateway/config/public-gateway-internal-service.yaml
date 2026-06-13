@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: public-api-internal
+  namespace: envoy-gateway-system
+  labels:
+    app.kubernetes.io/name: public-api-internal
+    app.kubernetes.io/component: gateway
+spec:
+  type: ClusterIP
+  selector:
+    gateway.envoyproxy.io/owning-gateway-name: public-api
+    gateway.envoyproxy.io/owning-gateway-namespace: envoy-gateway-system
+  ports:
+    - name: http
+      port: 80
+      targetPort: 10080
+    - name: https
+      port: 443
+      targetPort: 10443

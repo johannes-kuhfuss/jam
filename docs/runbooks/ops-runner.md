@@ -111,6 +111,8 @@ Before bootstrapping Cilium and deploying platform components, adjust the lab lo
 
 The Envoy Gateway IP must be a free address inside the Cilium pool. See `docs/architecture/networking.md` for an example.
 
+The platform deployment configures cluster-internal DNS for `auth.mam.jku.internal` automatically. External clients still need wildcard DNS pointing at the Envoy Gateway load-balancer IP, but in-cluster clients use the stable `public-api-internal.envoy-gateway-system.svc.cluster.local` service to avoid routing back through the external L2 address.
+
 Run the lab provisioning sequence:
 
 ```sh

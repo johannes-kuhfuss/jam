@@ -13,6 +13,8 @@ The lab platform exposes these operator UIs through this Gateway:
 - `https://hubble.mam.jku.internal`
 - `https://longhorn.mam.jku.internal`
 
+The platform configuration also creates a stable internal service named `public-api-internal` in `envoy-gateway-system`. `scripts/dev/deploy-platform.sh` patches CoreDNS so in-cluster clients resolve `auth.mam.jku.internal` to that stable service name instead of the external L2 load-balancer address. This avoids hairpin routing problems when Envoy Gateway validates OIDC issuers from inside the cluster.
+
 ## Operator UI Authentication
 
 Hubble UI and Longhorn UI can be protected with route-scoped Envoy Gateway OIDC `SecurityPolicy` resources. The policies are enabled by `scripts/dev/prepare-operator-oidc.sh` after the matching client secrets are written.

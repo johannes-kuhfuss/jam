@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - gateway-class.yaml
   - public-gateway.yaml
+  - public-gateway-internal-service.yaml

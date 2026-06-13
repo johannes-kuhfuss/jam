@@ -42,6 +42,14 @@ Manual DNS should point the wildcard MAM hostname at the Envoy Gateway IP:
 *.mam.jku.internal -> 192.168.200.240
 ```
 
+Inside the cluster, `auth.mam.jku.internal` is resolved differently. The platform creates a stable `ClusterIP` service named `public-api-internal` in `envoy-gateway-system`, and `scripts/dev/deploy-platform.sh` patches CoreDNS with this rewrite:
+
+```text
+auth.mam.jku.internal -> public-api-internal.envoy-gateway-system.svc.cluster.local
+```
+
+This keeps Envoy Gateway OIDC issuer discovery on the internal service path while preserving the public issuer URL used by browsers and tokens.
+
 Current lab hostnames behind that wildcard include:
 
 ```text
