@@ -79,7 +79,7 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$COREDNS_NAMESPACE" \
   --from-file=Corefile="$patched_corefile_path" \
   --dry-run=client \
   -o yaml |
-  kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f -
+  kubectl --kubeconfig "$KUBECONFIG_PATH" replace -f -
 
 kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$COREDNS_NAMESPACE" \
   rollout restart deployment/coredns
