@@ -8,8 +8,9 @@ PLATFORM_DIR="$REPO_ROOT/infra/kubernetes/platform"
 SECRETS_DIR="$REPO_ROOT/infra/kubernetes/secrets/lab"
 VALUES_DIR="$REPO_ROOT/infra/helm/values/platform"
 ZITADEL_SECRET_PATH="$SECRETS_DIR/platform/zitadel-masterkey.secret.yaml"
+DEFAULT_SOPS_AGE_KEY_FILE="$REPO_ROOT/infra/talos/generated/sops-age.agekey"
 PREPARE_ZITADEL="${PREPARE_ZITADEL:-auto}"
-ENCRYPT_ZITADEL_SECRET="${ENCRYPT_ZITADEL_SECRET:-false}"
+ENCRYPT_ZITADEL_SECRET="${ENCRYPT_ZITADEL_SECRET:-true}"
 DEPLOY_TIMEOUT="${DEPLOY_TIMEOUT:-15m}"
 BOOTSTRAP_TIMEOUT="${BOOTSTRAP_TIMEOUT:-300s}"
 
@@ -24,6 +25,7 @@ Options:
 Environment:
   PREPARE_ZITADEL=true|false|auto
   ENCRYPT_ZITADEL_SECRET=true|false
+  SOPS_AGE_KEY_FILE=/path/to/agekey
 EOF
 }
 
@@ -126,6 +128,7 @@ apply_secret_file() {
 
   if grep -q '^sops:' "$path"; then
     require_command sops
+    configure_sops_age_key
     sops decrypt "$path" | kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f -
   else
     kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$path"
@@ -140,6 +143,19 @@ apply_lab_secrets() {
   find "$SECRETS_DIR/platform" -type f \( -name '*.yaml' -o -name '*.yml' \) | while IFS= read -r secret_file; do
     apply_secret_file "$secret_file"
   done
+}
+
+configure_sops_age_key() {
+  if [ -n "${SOPS_AGE_KEY_FILE:-}" ] ||
+    [ -n "${SOPS_AGE_KEY:-}" ] ||
+    [ -n "${SOPS_AGE_KEY_CMD:-}" ] ||
+    [ -n "${SOPS_AGE_SSH_PRIVATE_KEY_FILE:-}" ] ||
+    [ -n "${SOPS_AGE_SSH_PRIVATE_KEY_CMD:-}" ]; then
+    return 0
+  fi
+
+  require_file "$DEFAULT_SOPS_AGE_KEY_FILE" "SOPS age key"
+  export SOPS_AGE_KEY_FILE="$DEFAULT_SOPS_AGE_KEY_FILE"
 }
 
 encrypt_zitadel_secret_if_requested() {
@@ -159,18 +175,20 @@ encrypt_zitadel_secret_if_requested() {
   fi
 
   require_command sops
+  configure_sops_age_key
+  print_step "Encrypting ZITADEL master key Secret"
   sops --encrypt --in-place "$ZITADEL_SECRET_PATH"
 }
 
 prepare_zitadel_if_needed() {
   case "$PREPARE_ZITADEL" in
     true|yes|1)
-      "$SCRIPT_DIR/prepare-zitadel.sh"
+      PREPARE_ZITADEL_EMBEDDED=true "$SCRIPT_DIR/prepare-zitadel.sh"
       encrypt_zitadel_secret_if_requested
       return 0
       ;;
     false|no|0)
-      require_file "$ZITADEL_SECRET_PATH" "ZITADEL master key Secret"
+      encrypt_zitadel_secret_if_requested
       return 0
       ;;
     auto) ;;
@@ -187,7 +205,7 @@ prepare_zitadel_if_needed() {
 
   if [ -t 0 ]; then
     print_step "Preparing ZITADEL configuration"
-    "$SCRIPT_DIR/prepare-zitadel.sh"
+    PREPARE_ZITADEL_EMBEDDED=true "$SCRIPT_DIR/prepare-zitadel.sh"
     encrypt_zitadel_secret_if_requested
     return 0
   fi
@@ -228,7 +246,7 @@ apply_kustomization "$PLATFORM_DIR/cert-manager/local-ca"
 
 print_step "Installing Longhorn"
 apply_kustomization "$PLATFORM_DIR/longhorn"
-helm_release longhorn-system longhorn longhorn/longhorn v1.12.0 "$VALUES_DIR/longhorn.yaml"
+helm_release longhorn-system longhorn longhorn/longhorn 1.12.0 "$VALUES_DIR/longhorn.yaml"
 
 print_step "Installing Istio ambient mesh"
 apply_kustomization "$PLATFORM_DIR/mesh/istio/base"

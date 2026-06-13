@@ -14,6 +14,7 @@ ZITADEL_KUSTOMIZATION="$ZITADEL_DIR/kustomization.yaml"
 ZITADEL_VALUES="$REPO_ROOT/infra/helm/values/platform/zitadel.yaml"
 HTTP_ROUTE_TEMPLATE="$ZITADEL_DIR/templates/http-route.yaml"
 HTTP_ROUTE="$ZITADEL_DIR/http-route.yaml"
+PREPARE_ZITADEL_EMBEDDED="${PREPARE_ZITADEL_EMBEDDED:-false}"
 
 require_file() {
   local path
@@ -313,6 +314,8 @@ ensure_kustomization_resource "$ZITADEL_KUSTOMIZATION" "http-route.yaml"
 update_zitadel_values "$external_domain" "$admin_username" "$admin_email" "$admin_password"
 
 printf '%s\n' "Prepared ZITADEL deployment files."
-printf '%s\n' "Next: encrypt the generated Secret before committing:"
-printf '%s\n' "  sops --encrypt --in-place infra/kubernetes/secrets/lab/platform/zitadel-masterkey.secret.yaml"
-printf '%s\n' "Then: ./scripts/dev/deploy-platform.sh"
+if [ "$PREPARE_ZITADEL_EMBEDDED" != "true" ]; then
+  printf '%s\n' "Next: encrypt the generated Secret before committing:"
+  printf '%s\n' "  sops --encrypt --in-place infra/kubernetes/secrets/lab/platform/zitadel-masterkey.secret.yaml"
+  printf '%s\n' "Then: ./scripts/dev/deploy-platform.sh"
+fi

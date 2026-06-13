@@ -129,4 +129,4 @@ fi
 
 printf '%s\n' "Cilium bootstrap complete. Platform deployment can now continue."
 printf '%s\n' "Next: ./scripts/dev/bootstrap-sops-age.sh"
-printf '%s\n' "Then: ENCRYPT_ZITADEL_SECRET=true ./scripts/dev/deploy-platform.sh --prepare-zitadel"
+printf '%s\n' "Then: ./scripts/dev/deploy-platform.sh --prepare-zitadel"

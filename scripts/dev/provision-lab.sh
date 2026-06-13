@@ -114,4 +114,4 @@ printf '%s\n' "Installed default talosconfig: $TARGET_TALOSCONFIG"
 wait_for_kubernetes_api
 printf '%s\n' "Next: ./scripts/dev/bootstrap-cilium.sh"
 printf '%s\n' "Then: ./scripts/dev/bootstrap-sops-age.sh"
-printf '%s\n' "Then: ENCRYPT_ZITADEL_SECRET=true ./scripts/dev/deploy-platform.sh --prepare-zitadel"
+printf '%s\n' "Then: ./scripts/dev/deploy-platform.sh --prepare-zitadel"

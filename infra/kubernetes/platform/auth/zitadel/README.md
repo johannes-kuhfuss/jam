@@ -18,7 +18,7 @@ The master key cannot be changed after first initialization without losing acces
 Use the platform deploy script to run the preparation prompts and then deploy:
 
 ```sh
-ENCRYPT_ZITADEL_SECRET=true sh scripts/dev/deploy-platform.sh --prepare-zitadel
+sh scripts/dev/deploy-platform.sh --prepare-zitadel
 ```
 
 The script prompts for:

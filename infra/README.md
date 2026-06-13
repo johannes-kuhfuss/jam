@@ -30,7 +30,7 @@ The lab environment supports either one converged Talos control-plane node or a 
 ./scripts/dev/provision-lab.sh
 ./scripts/dev/bootstrap-cilium.sh
 ./scripts/dev/bootstrap-sops-age.sh
-ENCRYPT_ZITADEL_SECRET=true ./scripts/dev/deploy-platform.sh --prepare-zitadel
+./scripts/dev/deploy-platform.sh --prepare-zitadel
 ./scripts/dev/blackbox-lab.sh
 ```
 

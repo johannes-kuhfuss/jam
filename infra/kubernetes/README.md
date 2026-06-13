@@ -14,12 +14,12 @@ Run this once per cluster before encrypting lab secrets:
 scripts/dev/bootstrap-sops-age.sh
 ```
 
-The script creates or reuses `infra/talos/generated/sops-age.agekey` and writes the matching public recipient into `.sops.yaml`. The private key stays on the ops runner and is used by `scripts/dev/deploy-platform.sh` through local SOPS decryption.
+The script creates or reuses `infra/talos/generated/sops-age.agekey` and writes the matching public recipient into `.sops.yaml`. The private key stays on the ops runner. `scripts/dev/deploy-platform.sh` uses that key file by default for local SOPS encryption and decryption unless `SOPS_AGE_KEY_FILE` or another SOPS age key environment variable is already set.
 
 For the lab ZITADEL deployment:
 
 ```sh
-ENCRYPT_ZITADEL_SECRET=true scripts/dev/deploy-platform.sh --prepare-zitadel
+scripts/dev/deploy-platform.sh --prepare-zitadel
 ```
 
 For other secrets, copy a template or write a Kubernetes Secret manifest under `infra/kubernetes/secrets/lab`, encrypt it with SOPS, and add only the encrypted manifest to the relevant `kustomization.yaml`.
