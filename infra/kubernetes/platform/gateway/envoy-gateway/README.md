@@ -19,12 +19,12 @@ Hubble UI and Longhorn UI can be protected with route-scoped Envoy Gateway OIDC 
 
 Create these ZITADEL OIDC applications manually:
 
-| UI | Client ID | Redirect URI |
-| --- | --- | --- |
-| Hubble UI | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
-| Longhorn UI | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
+| UI | Type | Authentication Method | Client ID | Redirect URI |
+| --- | --- | --- | --- | --- |
+| Hubble UI | `Web` | `Code` | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
+| Longhorn UI | `Web` | `Code` | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
 
-Use a confidential/web application type that issues a client secret. After creating both applications, run:
+Use the generated client secrets from both applications, then run:
 
 ```sh
 sh scripts/dev/prepare-operator-oidc.sh

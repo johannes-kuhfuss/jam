@@ -77,6 +77,8 @@ After ZITADEL is running, create OIDC clients for the operator UIs if you want E
 | Hubble UI | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
 | Longhorn UI | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
 
+Use application type `Web` and authentication method `Code` for both clients.
+
 Then run:
 
 ```sh

@@ -53,7 +53,7 @@ Current operator UI clients:
 | Hubble UI | `hubble.mam.jku.internal` | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
 | Longhorn UI | `longhorn.mam.jku.internal` | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
 
-The OIDC clients are created manually in ZITADEL for now. `scripts/dev/prepare-operator-oidc.sh` records their client secrets as SOPS-encrypted Kubernetes Secrets and enables the route-scoped Envoy Gateway `SecurityPolicy` manifests.
+The OIDC clients are created manually in ZITADEL for now. Use application type `Web` and authentication method `Code` for both clients. `scripts/dev/prepare-operator-oidc.sh` records their client secrets as SOPS-encrypted Kubernetes Secrets and enables the route-scoped Envoy Gateway `SecurityPolicy` manifests.
 
 ## Protocol Constraints
 

@@ -125,12 +125,12 @@ The deploy script applies the runner's local working tree directly. Review `git 
 
 After ZITADEL is reachable at `https://auth.mam.jku.internal`, create OIDC applications for the operator UIs:
 
-| UI | Client ID | Redirect URI |
-| --- | --- | --- |
-| Hubble UI | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
-| Longhorn UI | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
+| UI | Type | Authentication Method | Client ID | Redirect URI |
+| --- | --- | --- | --- | --- |
+| Hubble UI | `Web` | `Code` | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
+| Longhorn UI | `Web` | `Code` | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
 
-Use confidential/web application settings that produce a client secret. Then store those secrets and enable the route-scoped Envoy Gateway policies:
+Use the generated client secrets from those applications. Then store those secrets and enable the route-scoped Envoy Gateway policies:
 
 ```sh
 sh scripts/dev/prepare-operator-oidc.sh
