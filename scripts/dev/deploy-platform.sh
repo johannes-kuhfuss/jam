@@ -135,14 +135,36 @@ apply_secret_file() {
   fi
 }
 
-apply_lab_secrets() {
-  if [ ! -d "$SECRETS_DIR/platform" ]; then
+apply_secret_directory() {
+  local directory
+
+  directory="$1"
+
+  if [ ! -d "$directory" ]; then
     return 0
   fi
 
-  find "$SECRETS_DIR/platform" -type f \( -name '*.yaml' -o -name '*.yml' \) | while IFS= read -r secret_file; do
+  find "$directory" -type f \( -name '*.yaml' -o -name '*.yml' \) | while IFS= read -r secret_file; do
     apply_secret_file "$secret_file"
   done
+}
+
+apply_lab_secrets() {
+  apply_secret_directory "$SECRETS_DIR/platform"
+}
+
+apply_operator_ui_secret() {
+  local secret_name
+  local secret_path
+
+  secret_name="$1"
+  secret_path="$SECRETS_DIR/platform/operator-ui/$secret_name"
+
+  if [ ! -f "$secret_path" ]; then
+    return 0
+  fi
+
+  apply_secret_file "$secret_path"
 }
 
 configure_sops_age_key() {
@@ -244,8 +266,11 @@ helm_release envoy-gateway-system envoy-gateway oci://docker.io/envoyproxy/gatew
 print_step "Installing local certificate resources"
 apply_kustomization "$PLATFORM_DIR/cert-manager/local-ca"
 
+print_step "Preparing platform secrets"
+apply_secret_file "$ZITADEL_SECRET_PATH"
+
 print_step "Installing Longhorn"
-apply_kustomization "$PLATFORM_DIR/longhorn"
+kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/longhorn/namespace.yaml"
 helm_release longhorn-system longhorn longhorn/longhorn 1.12.0 "$VALUES_DIR/longhorn.yaml"
 
 print_step "Installing Istio ambient mesh"
@@ -257,11 +282,13 @@ helm_release istio-system ztunnel istio/ztunnel 1.30.1
 
 print_step "Applying Envoy Gateway configuration"
 apply_kustomization "$PLATFORM_DIR/gateway/envoy-gateway/config"
+apply_operator_ui_secret hubble-ui-oidc-client.secret.yaml
 apply_kustomization "$PLATFORM_DIR/cilium"
+apply_operator_ui_secret longhorn-ui-oidc-client.secret.yaml
+apply_kustomization "$PLATFORM_DIR/longhorn"
 
 print_step "Preparing ZITADEL namespace and secrets"
 kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/auth/zitadel/namespace.yaml"
-apply_lab_secrets
 
 print_step "Installing ZITADEL dependencies"
 helm_release zitadel zitadel-postgresql oci://registry-1.docker.io/bitnamicharts/postgresql 18.5.13 "$VALUES_DIR/zitadel-postgresql.yaml"

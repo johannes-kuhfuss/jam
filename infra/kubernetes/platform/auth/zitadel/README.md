@@ -67,3 +67,19 @@ kubectl -n zitadel get httproute zitadel
 ```
 
 Make sure DNS for the configured hostname points to the Envoy Gateway address.
+
+## Operator UI OIDC Clients
+
+After ZITADEL is running, create OIDC clients for the operator UIs if you want Envoy Gateway authentication in front of them:
+
+| UI | Client ID | Redirect URI |
+| --- | --- | --- |
+| Hubble UI | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
+| Longhorn UI | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
+
+Then run:
+
+```sh
+sh scripts/dev/prepare-operator-oidc.sh
+./scripts/dev/deploy-platform.sh
+```

@@ -1,0 +1,17 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: longhorn-ui-oidc
+  namespace: longhorn-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: longhorn-ui
+  oidc:
+    provider:
+      issuer: https://auth.mam.jku.internal
+    clientID: longhorn-ui
+    clientSecret:
+      name: longhorn-ui-oidc-client
+    redirectURL: https://longhorn.mam.jku.internal/oauth2/callback

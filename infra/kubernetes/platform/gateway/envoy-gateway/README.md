@@ -13,6 +13,26 @@ The lab platform exposes these operator UIs through this Gateway:
 - `https://hubble.mam.jku.internal`
 - `https://longhorn.mam.jku.internal`
 
+## Operator UI Authentication
+
+Hubble UI and Longhorn UI can be protected with route-scoped Envoy Gateway OIDC `SecurityPolicy` resources. The policies are enabled by `scripts/dev/prepare-operator-oidc.sh` after the matching client secrets are written.
+
+Create these ZITADEL OIDC applications manually:
+
+| UI | Client ID | Redirect URI |
+| --- | --- | --- |
+| Hubble UI | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
+| Longhorn UI | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
+
+Use a confidential/web application type that issues a client secret. After creating both applications, run:
+
+```sh
+sh scripts/dev/prepare-operator-oidc.sh
+./scripts/dev/deploy-platform.sh
+```
+
+The preparation script prompts for the two client secrets, writes SOPS-encrypted Kubernetes Secrets, and enables the route-scoped `SecurityPolicy` manifests.
+
 Set the intended public Gateway IP with `spec.addresses` in `config/public-gateway.yaml`. The chosen IP must be inside the Cilium `CiliumLoadBalancerIPPool` configured in `infra/platform/cilium/l2-lab.yaml`.
 
 Before exposing the MAM beyond the lab:
