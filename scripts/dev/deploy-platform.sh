@@ -170,16 +170,69 @@ apply_operator_ui_secret() {
 apply_operator_ui_auth() {
   local secret_name
   local policy_path
+  local secret_path
+  local client_id
+  local rendered_policy
 
   secret_name="$1"
   policy_path="$2"
+  secret_path="$SECRETS_DIR/platform/operator-ui/$secret_name"
 
-  if [ ! -f "$SECRETS_DIR/platform/operator-ui/$secret_name" ]; then
+  if [ ! -f "$secret_path" ]; then
     return 0
   fi
 
   apply_operator_ui_secret "$secret_name"
-  kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$policy_path"
+  client_id=$(read_oidc_client_id "$secret_path")
+  rendered_policy=$(mktemp)
+  render_security_policy "$policy_path" "$client_id" > "$rendered_policy"
+  kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$rendered_policy"
+  rm -f "$rendered_policy"
+}
+
+read_oidc_client_id() {
+  local secret_path
+
+  secret_path="$1"
+
+  if grep -q '^sops:' "$secret_path"; then
+    require_command sops
+    configure_sops_age_key
+    sops decrypt "$secret_path"
+  else
+    cat "$secret_path"
+  fi | awk -F': ' '
+    /^  client-id:/ {
+      value = $2
+      sub(/^'\''/, "", value)
+      sub(/'\''$/, "", value)
+      gsub(/'\'''\''/, "'\''", value)
+      print value
+      found = 1
+      exit
+    }
+    END {
+      if (!found) {
+        exit 42
+      }
+    }
+  '
+}
+
+render_security_policy() {
+  local policy_path
+  local client_id
+
+  policy_path="$1"
+  client_id="$2"
+
+  awk -v client_id="$client_id" '
+    /^    clientID:/ {
+      print "    clientID: \"" client_id "\""
+      next
+    }
+    { print }
+  ' "$policy_path"
 }
 
 configure_sops_age_key() {
