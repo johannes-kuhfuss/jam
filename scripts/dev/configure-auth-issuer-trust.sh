@@ -7,7 +7,6 @@ KUBECONFIG_PATH="${KUBECONFIG:-$REPO_ROOT/infra/talos/generated/kubeconfig}"
 SOURCE_NAMESPACE="${SOURCE_NAMESPACE:-cert-manager}"
 SOURCE_CERTIFICATE="${SOURCE_CERTIFICATE:-jam-local-root-ca}"
 SOURCE_SECRET="${SOURCE_SECRET:-jam-local-root-ca}"
-TARGET_NAMESPACE="${TARGET_NAMESPACE:-envoy-gateway-system}"
 TARGET_CONFIGMAP="${TARGET_CONFIGMAP:-jam-local-root-ca-bundle}"
 CERT_WAIT_TIMEOUT="${CERT_WAIT_TIMEOUT:-180s}"
 
@@ -39,6 +38,19 @@ cleanup() {
   rm -f "$ca_path"
 }
 
+apply_ca_bundle() {
+  local namespace
+
+  namespace="$1"
+
+  kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$namespace" \
+    create configmap "$TARGET_CONFIGMAP" \
+    --from-file=ca.crt="$ca_path" \
+    --dry-run=client \
+    -o yaml |
+    kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f -
+}
+
 require_file "$KUBECONFIG_PATH" "kubeconfig"
 require_command base64
 require_command kubectl
@@ -53,9 +65,6 @@ kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$SOURCE_NAMESPACE" \
   get secret "$SOURCE_SECRET" -o jsonpath='{.data.ca\.crt}' |
   base64 -d > "$ca_path"
 
-kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$TARGET_NAMESPACE" \
-  create configmap "$TARGET_CONFIGMAP" \
-  --from-file=ca.crt="$ca_path" \
-  --dry-run=client \
-  -o yaml |
-  kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f -
+for namespace in "$@"; do
+  apply_ca_bundle "$namespace"
+done

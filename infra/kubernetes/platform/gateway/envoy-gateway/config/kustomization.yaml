@@ -4,5 +4,3 @@ resources:
   - gateway-class.yaml
   - public-gateway.yaml
   - public-gateway-internal-service.yaml
-  - auth-issuer-backend-tls-policy.yaml
-  - operator-ui-reference-grants.yaml

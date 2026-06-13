@@ -12,8 +12,9 @@ spec:
     provider:
       issuer: https://auth.mam.jku.internal
       backendRefs:
-        - name: public-api-internal
-          namespace: envoy-gateway-system
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: zitadel-auth-issuer
           port: 443
     clientID: hubble-ui
     clientSecret:
