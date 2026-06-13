@@ -123,6 +123,22 @@ git status
 
 The deploy script applies the runner's local working tree directly. Review `git status` before deployment so local changes are intentional.
 
+After ZITADEL is reachable at `https://auth.mam.jku.internal`, create OIDC applications for the operator UIs:
+
+| UI | Client ID | Redirect URI |
+| --- | --- | --- |
+| Hubble UI | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
+| Longhorn UI | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
+
+Use confidential/web application settings that produce a client secret. Then store those secrets and enable the route-scoped Envoy Gateway policies:
+
+```sh
+sh scripts/dev/prepare-operator-oidc.sh
+./scripts/dev/deploy-platform.sh
+```
+
+The preparation script writes SOPS-encrypted Secrets under `infra/kubernetes/secrets/lab/platform/operator-ui/` and adds the Hubble and Longhorn `SecurityPolicy` manifests to their platform kustomizations.
+
 The script runs OpenTofu and stores generated client configs under:
 
 ```text
@@ -144,6 +160,8 @@ The installed kubeconfig initially uses the first Talos node IP as the Kubernete
 `scripts/dev/deploy-platform.sh --prepare-zitadel` runs the ZITADEL preparation prompts before deployment. The preparation step writes the ZITADEL master key Secret manifest, adds it to the lab secrets kustomization, copies the ZITADEL HTTPRoute into place, updates the first-instance admin login values in `infra/helm/values/platform/zitadel.yaml`, and encrypts a generated plaintext Secret with SOPS before applying it. Set `ENCRYPT_ZITADEL_SECRET=false` only for a local throwaway deployment where you deliberately do not want SOPS encryption. The lab deploys PostgreSQL as a separate Helm release before ZITADEL, so the database service exists before the ZITADEL initialization hook runs.
 
 `scripts/dev/deploy-platform.sh` installs Helm-managed platform components, decrypts lab secrets locally with SOPS when needed, and applies plain Kubernetes manifests from `infra/kubernetes`. If the ZITADEL master key Secret is missing and the script is running interactively, the default `PREPARE_ZITADEL=auto` behavior runs the preparation prompts. Readiness for the platform components is checked by `scripts/dev/blackbox-lab.sh`.
+
+`scripts/dev/prepare-operator-oidc.sh` is intentionally separate from the main deployment because the ZITADEL applications and client secrets do not exist until after the first ZITADEL deployment is complete.
 
 If an existing default kubeconfig is present, the script backs it up as `~/.kube/config.jam-backup.<timestamp>` and records that backup in `~/.kube/config.jam-managed`.
 

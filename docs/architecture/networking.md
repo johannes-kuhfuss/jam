@@ -50,4 +50,4 @@ hubble.mam.jku.internal
 longhorn.mam.jku.internal
 ```
 
-Hubble UI and Longhorn UI are intended to use route-scoped Envoy Gateway OIDC policies after their ZITADEL clients are created.
+Hubble UI and Longhorn UI use route-scoped Envoy Gateway OIDC policies after their ZITADEL clients are created and `scripts/dev/prepare-operator-oidc.sh` has written the encrypted client secrets.

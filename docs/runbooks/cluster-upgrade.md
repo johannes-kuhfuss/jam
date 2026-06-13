@@ -12,3 +12,4 @@ Current policy:
 - Pin platform chart values under `infra/helm/values/platform`.
 - Keep Talos installer images aligned with the required Longhorn host extensions: `siderolabs/iscsi-tools` and `siderolabs/util-linux-tools`.
 - Run `scripts/dev/deploy-platform.sh` after changing platform chart versions or values.
+- Re-run `scripts/dev/prepare-operator-oidc.sh` only when replacing the Hubble or Longhorn ZITADEL OIDC client secrets.
