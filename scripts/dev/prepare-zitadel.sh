@@ -302,6 +302,8 @@ case "$masterkey" in
     echo "ZITADEL master key must contain only alphanumeric characters." >&2
     exit 1
     ;;
+  *)
+    ;;
 esac
 
 write_masterkey_secret "$masterkey"
