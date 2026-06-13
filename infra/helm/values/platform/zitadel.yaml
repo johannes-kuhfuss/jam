@@ -28,8 +28,10 @@ zitadel:
     FirstInstance:
       Org:
         Human:
-          UserName: 'admin'
-          Email: 'admin@mam.jku.internal'
+          UserName: 'admin@mam.jku.internal'
+          Email:
+            Address: 'admin@mam.jku.internal'
+            Verified: true
           Password: 'Admin4Auth32!'
           PasswordChangeRequired: true
 ingress:

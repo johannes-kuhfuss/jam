@@ -5,7 +5,7 @@ ZITADEL is the planned OIDC/OAuth2 provider for jam human users and external mac
 Before deploying it:
 
 - generate a permanent 32-character `zitadel-masterkey` Secret
-- replace the first instance admin email and password in `infra/helm/values/platform/zitadel.yaml`
+- replace the first instance admin login, email, and password in `infra/helm/values/platform/zitadel.yaml`
 - decide whether the bundled PostgreSQL chart is acceptable for the lab or whether an external PostgreSQL service should be used
 - keep `http-route.yaml` in this directory for the configured external hostname
 
@@ -24,7 +24,7 @@ sh scripts/dev/deploy-platform.sh --prepare-zitadel
 The script prompts for:
 
 - the external ZITADEL hostname
-- the first instance admin username, email, and password
+- the first instance admin email, login name, and password
 - whether to use the lab PostgreSQL chart
 - the 32-character master key, or permission to generate one
 
@@ -36,7 +36,7 @@ It then:
 - adds that Secret manifest to `infra/kubernetes/secrets/lab/kustomization.yaml`
 - copies `templates/http-route.yaml` to `http-route.yaml`
 - adds the route to this kustomization
-- replaces the placeholder first-instance values in `infra/helm/values/platform/zitadel.yaml`
+- replaces the placeholder first-instance login values in `infra/helm/values/platform/zitadel.yaml`
 
 If you run `scripts/dev/prepare-zitadel.sh` directly, encrypt the generated Secret before deployment:
 
@@ -53,7 +53,7 @@ If you do not use the helper script, make the same changes manually:
 1. Copy `infra/kubernetes/secrets/lab/templates/zitadel-masterkey.secret.yaml` to `infra/kubernetes/secrets/lab/platform/zitadel-masterkey.secret.yaml`.
 2. Replace the `masterkey` value with a permanent 32-character random alphanumeric value.
 3. Encrypt the Secret with SOPS and add it to `infra/kubernetes/secrets/lab/kustomization.yaml`.
-4. Replace the placeholder first-instance admin email and password in `infra/helm/values/platform/zitadel.yaml`.
+4. Replace the placeholder first-instance admin login, email, and password in `infra/helm/values/platform/zitadel.yaml`.
 5. Decide whether the lab PostgreSQL chart is acceptable. If it is not, configure an external PostgreSQL service before deployment.
 6. Copy `templates/http-route.yaml` to `http-route.yaml`, update the hostname if needed, and add it to this kustomization.
 7. Run `scripts/dev/deploy-platform.sh`, or run `scripts/dev/deploy-platform.sh --prepare-zitadel` to let the deploy script perform the preparation step.

@@ -162,29 +162,29 @@ ensure_kustomization_resource() {
 
 update_zitadel_values() {
   local external_domain
-  local admin_username
+  local admin_login_name
   local admin_email
   local admin_password
   local tmp_path
   local external_domain_q
-  local admin_username_q
+  local admin_login_name_q
   local admin_email_q
   local admin_password_q
 
   external_domain="$1"
-  admin_username="$2"
+  admin_login_name="$2"
   admin_email="$3"
   admin_password="$4"
   tmp_path="$ZITADEL_VALUES.tmp"
 
   external_domain_q=$(yaml_single_quote "$external_domain")
-  admin_username_q=$(yaml_single_quote "$admin_username")
+  admin_login_name_q=$(yaml_single_quote "$admin_login_name")
   admin_email_q=$(yaml_single_quote "$admin_email")
   admin_password_q=$(yaml_single_quote "$admin_password")
 
   awk \
     -v external_domain="$external_domain_q" \
-    -v admin_username="$admin_username_q" \
+    -v admin_login_name="$admin_login_name_q" \
     -v admin_email="$admin_email_q" \
     -v admin_password="$admin_password_q" '
       /^  suspend:/ {
@@ -195,14 +195,27 @@ update_zitadel_values() {
         next
       }
       /^          UserName:/ {
-        print "          UserName: '\''" admin_username "'\''"
+        print "          UserName: '\''" admin_login_name "'\''"
         next
       }
       /^          Email:/ {
-        print "          Email: '\''" admin_email "'\''"
+        print "          Email:"
+        print "            Address: '\''" admin_email "'\''"
+        print "            Verified: true"
+        in_email = 1
         next
       }
+      in_email && /^            Address:/ {
+        next
+      }
+      in_email && /^            Verified:/ {
+        next
+      }
+      in_email && /^          [A-Za-z]/ {
+        in_email = 0
+      }
       /^          Password:/ {
+        in_email = 0
         print "          Password: '\''" admin_password "'\''"
         next
       }
@@ -274,8 +287,8 @@ require_file "$SECRETS_KUSTOMIZATION" "lab secrets kustomization"
 require_file "$HTTP_ROUTE_TEMPLATE" "ZITADEL HTTPRoute template"
 
 external_domain=$(prompt_default "External ZITADEL hostname" "auth.mam.jku.internal")
-admin_username=$(prompt_default "First instance admin username" "admin")
 admin_email=$(prompt_required "First instance admin email")
+admin_login_name=$(prompt_default "First instance admin login name" "$admin_email")
 admin_password=$(prompt_secret "First instance admin password")
 use_lab_postgresql=$(prompt_yes_no "Use the lab PostgreSQL chart" "yes")
 
@@ -311,7 +324,7 @@ write_masterkey_secret "$masterkey"
 ensure_kustomization_resource "$SECRETS_KUSTOMIZATION" "$SECRET_RESOURCE"
 update_http_route "$external_domain"
 ensure_kustomization_resource "$ZITADEL_KUSTOMIZATION" "http-route.yaml"
-update_zitadel_values "$external_domain" "$admin_username" "$admin_email" "$admin_password"
+update_zitadel_values "$external_domain" "$admin_login_name" "$admin_email" "$admin_password"
 
 printf '%s\n' "Prepared ZITADEL deployment files."
 if [ "$PREPARE_ZITADEL_EMBEDDED" != "true" ]; then
