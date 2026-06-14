@@ -334,6 +334,9 @@ helm_release envoy-gateway-system envoy-gateway oci://docker.io/envoyproxy/gatew
 print_step "Installing local certificate resources"
 apply_kustomization "$PLATFORM_DIR/cert-manager/local-ca"
 
+print_step "Preparing ZITADEL namespace"
+kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/auth/zitadel/namespace.yaml"
+
 print_step "Preparing platform secrets"
 apply_secret_file "$ZITADEL_SECRET_PATH"
 
@@ -362,9 +365,6 @@ apply_kustomization "$PLATFORM_DIR/longhorn"
 kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/longhorn/auth-issuer-backend.yaml"
 kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/longhorn/auth-issuer-backend-tls-policy.yaml"
 apply_operator_ui_auth longhorn-ui-oidc-client.secret.yaml "$PLATFORM_DIR/longhorn/security-policy.yaml"
-
-print_step "Preparing ZITADEL namespace and secrets"
-kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/auth/zitadel/namespace.yaml"
 
 print_step "Installing ZITADEL dependencies"
 helm_release zitadel zitadel-postgresql oci://registry-1.docker.io/bitnamicharts/postgresql 18.5.13 "$VALUES_DIR/zitadel-postgresql.yaml"
