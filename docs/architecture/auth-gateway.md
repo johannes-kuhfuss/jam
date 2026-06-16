@@ -21,7 +21,7 @@ browser or external API client -> Envoy Gateway -> mesh mTLS -> service
 Operator UI requests:
 
 ```text
-browser -> Envoy Gateway OIDC policy -> Hubble UI or Longhorn UI
+browser -> Envoy Gateway -> Hubble UI or Longhorn UI
 ```
 
 Internal service calls:
@@ -41,19 +41,6 @@ browser -> API upload intent -> signed object URL -> object storage -> ingest ev
 ZITADEL owns human login, browser OIDC flows, external machine clients, and client credentials.
 
 Istio owns in-cluster workload identity and mTLS. Internal services should trust mesh identity for service-to-service authentication and use forwarded user context only when a request is acting on behalf of a user.
-
-## Operator UI Authentication
-
-Lab operator UIs are exposed through Envoy Gateway and should use route-scoped OIDC policies instead of their own public unauthenticated endpoints.
-
-Current operator UI clients:
-
-| UI | Hostname | Suggested app name | Redirect URI |
-| --- | --- | --- | --- |
-| Hubble UI | `hubble.mam.jku.internal` | `hubble-ui` | `https://hubble.mam.jku.internal/oauth2/callback` |
-| Longhorn UI | `longhorn.mam.jku.internal` | `longhorn-ui` | `https://longhorn.mam.jku.internal/oauth2/callback` |
-
-The OIDC clients are created manually in ZITADEL for now. Use application type `Web` and authentication method `Code` for both clients. ZITADEL generates the actual OIDC client IDs; `scripts/dev/prepare-operator-oidc.sh` records those IDs in the route-scoped Envoy Gateway `SecurityPolicy` manifests and stores the client secrets as SOPS-encrypted Kubernetes Secrets.
 
 ## Protocol Constraints
 

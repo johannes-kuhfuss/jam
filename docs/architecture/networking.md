@@ -48,9 +48,7 @@ Inside the cluster, `auth.mam.jku.internal` is resolved differently. The platfor
 auth.mam.jku.internal -> public-api-internal.envoy-gateway-system.svc.cluster.local
 ```
 
-This keeps Envoy Gateway OIDC issuer discovery on the internal service path while preserving the public issuer URL used by browsers and tokens.
-
-Because the lab uses a local cert-manager CA, the deployment also copies the local root CA into the operator UI namespaces. Namespace-local Envoy Gateway `Backend` resources point at `auth.mam.jku.internal`, and matching `BackendTLSPolicy` resources attach that trust bundle so Envoy Gateway can verify `https://auth.mam.jku.internal` during OIDC discovery.
+This keeps in-cluster issuer discovery on the internal service path while preserving the public issuer URL used by browsers and tokens.
 
 Current lab hostnames behind that wildcard include:
 
@@ -59,5 +57,3 @@ auth.mam.jku.internal
 hubble.mam.jku.internal
 longhorn.mam.jku.internal
 ```
-
-Hubble UI and Longhorn UI use route-scoped Envoy Gateway OIDC policies after their ZITADEL clients are created and `scripts/dev/prepare-operator-oidc.sh` has written the encrypted client secrets.

@@ -20,7 +20,6 @@ Provisioning model:
 - Cilium is installed once by a bootstrap script because the cluster starts without a CNI.
 - `scripts/dev/deploy-platform.sh` installs Helm-managed platform components and applies Kubernetes manifests from `infra/kubernetes`.
 - Cilium L2 announcements provide lab `LoadBalancer` Service IP advertisement.
-- Optional operator UI authentication is completed after ZITADEL is online by creating the Hubble and Longhorn OIDC clients, running `scripts/dev/prepare-operator-oidc.sh`, and redeploying the platform manifests.
 
 Known lab tradeoffs:
 

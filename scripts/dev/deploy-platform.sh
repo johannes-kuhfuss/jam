@@ -153,88 +153,6 @@ apply_lab_secrets() {
   apply_secret_directory "$SECRETS_DIR/platform"
 }
 
-apply_operator_ui_secret() {
-  local secret_name
-  local secret_path
-
-  secret_name="$1"
-  secret_path="$SECRETS_DIR/platform/operator-ui/$secret_name"
-
-  if [ ! -f "$secret_path" ]; then
-    return 0
-  fi
-
-  apply_secret_file "$secret_path"
-}
-
-apply_operator_ui_auth() {
-  local secret_name
-  local policy_path
-  local secret_path
-  local client_id
-  local rendered_policy
-
-  secret_name="$1"
-  policy_path="$2"
-  secret_path="$SECRETS_DIR/platform/operator-ui/$secret_name"
-
-  if [ ! -f "$secret_path" ]; then
-    return 0
-  fi
-
-  apply_operator_ui_secret "$secret_name"
-  client_id=$(read_oidc_client_id "$secret_path")
-  rendered_policy=$(mktemp)
-  render_security_policy "$policy_path" "$client_id" > "$rendered_policy"
-  kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$rendered_policy"
-  rm -f "$rendered_policy"
-}
-
-read_oidc_client_id() {
-  local secret_path
-
-  secret_path="$1"
-
-  if grep -q '^sops:' "$secret_path"; then
-    require_command sops
-    configure_sops_age_key
-    sops decrypt "$secret_path"
-  else
-    cat "$secret_path"
-  fi | awk -F': ' '
-    /^  client-id:/ {
-      value = $2
-      sub(/^'\''/, "", value)
-      sub(/'\''$/, "", value)
-      gsub(/'\'''\''/, "'\''", value)
-      print value
-      found = 1
-      exit
-    }
-    END {
-      if (!found) {
-        exit 42
-      }
-    }
-  '
-}
-
-render_security_policy() {
-  local policy_path
-  local client_id
-
-  policy_path="$1"
-  client_id="$2"
-
-  awk -v client_id="$client_id" '
-    /^    clientID:/ {
-      print "    clientID: \"" client_id "\""
-      next
-    }
-    { print }
-  ' "$policy_path"
-}
-
 configure_sops_age_key() {
   if [ -n "${SOPS_AGE_KEY_FILE:-}" ] ||
     [ -n "${SOPS_AGE_KEY:-}" ] ||
@@ -355,18 +273,8 @@ print_step "Applying Envoy Gateway configuration"
 apply_kustomization "$PLATFORM_DIR/gateway/envoy-gateway/config"
 print_step "Configuring cluster DNS for public auth hostname"
 sh "$SCRIPT_DIR/configure-cluster-dns.sh"
-print_step "Configuring auth issuer trust"
-sh "$SCRIPT_DIR/configure-auth-issuer-trust.sh" kube-system longhorn-system
-apply_operator_ui_secret hubble-ui-oidc-client.secret.yaml
-apply_operator_ui_secret longhorn-ui-oidc-client.secret.yaml
 apply_kustomization "$PLATFORM_DIR/cilium"
-kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/cilium/auth-issuer-backend.yaml"
-kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/cilium/auth-issuer-backend-tls-policy.yaml"
-apply_operator_ui_auth hubble-ui-oidc-client.secret.yaml "$PLATFORM_DIR/cilium/hubble-ui-security-policy.yaml"
 apply_kustomization "$PLATFORM_DIR/longhorn"
-kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/longhorn/auth-issuer-backend.yaml"
-kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$PLATFORM_DIR/longhorn/auth-issuer-backend-tls-policy.yaml"
-apply_operator_ui_auth longhorn-ui-oidc-client.secret.yaml "$PLATFORM_DIR/longhorn/security-policy.yaml"
 
 print_step "Installing ZITADEL dependencies"
 helm_release zitadel zitadel-postgresql oci://registry-1.docker.io/bitnamicharts/postgresql 18.5.13 "$VALUES_DIR/zitadel-postgresql.yaml"
